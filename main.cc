@@ -13,10 +13,13 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include "singem-sidecar.h"
+#include "singem.h"
+#include "approx-log-rand-v4c.hh"
 
-using float_type = scFloatSidecar ;
+using float_type = double;
 //using float_type = double ;
 
 // simple class to wrap C++'s basic random class, for now
@@ -75,7 +78,7 @@ T get_distance_to_boundary(int &cross_face, const std::array<T, 2> &pos, const s
         cross_face=6;
       if (angle[0] < T(-1.0e-19) && angle[1] < T(-1.0e-19))
         cross_face=7;
-      std::cout<<"Double cross: "<<cross_face<<std::endl;
+      //std::cout<<"Double cross: "<<cross_face<<std::endl;
     }
     return min_distance;
 }
@@ -87,17 +90,27 @@ int main(void) {
 
   // problem parameters
   const float_type dx = float_type(0.01);  // cell size, square, in cm
-  const float_type dt = float_type(0.0005); // timestep size, in shakes (1e-8 seconds)
+  const float_type dt = float_type(0.001); // timestep size, in shakes (1e-8 seconds)
   const float_type mfp = float_type(.3); // average distance, in cm, between scattering events
   const float_type sig_s = float_type(1.0)/mfp; // scattering opacity
+  const float_type sig_a = float_type(10.0); // absorption opacity
   const float_type ratio = dx; // converts real space to [0,1] space
-  const int n_particles = 20;
+  const int n_particles = 1000000;
   const int n_census = static_cast<int>(n_particles*1.0); // half particles are at time = 0.0
-  constexpr int start_x = 10; // 10th x cell
-  constexpr int start_y = 10; // 10th y cell
-  constexpr int max_x_cell = 20;
-  constexpr int max_y_cell = 20;
+  constexpr int start_x = 10; // 11th x cell
+  constexpr int start_y = 10; // 11th y cell
+  constexpr int max_x_cell = 21;
+  constexpr int max_y_cell = 21;
   RNG <float_type>rng(777);
+  const approx max_int_log(approx(std::log(65535.0)));
+  const float_type start_weight = 1.0/n_particles; // starting energy weight of particle
+
+  std::vector<std::vector<float_type>> tally(max_x_cell); //x slow dimension
+  std::vector<std::vector<double>> check_tally(max_x_cell); // x slow dimension
+  for (size_t i=0;i<max_x_cell;++i) {
+    tally[i].resize(max_y_cell, 0.0);
+    check_tally[i].resize(max_y_cell, 0.0);
+  }
 
   for (int i =0; i<n_particles; ++i) {
 
@@ -107,15 +120,16 @@ int main(void) {
     std::array<float_type,2> pos = {float_type(0.5), float_type(0.5)};
     std::array<float_type,2> angle = get_angle<float_type>(rng);
 
-    if (angle[0] != angle[0])
-      std::cout<<"angle 0 is NaN!"<<std::endl;
-    if (angle[1] != angle[1])
-      std::cout<<"angle 1 is NaN!"<<std::endl;
+    if (angle[0] != angle[0]) std::cout<<"angle 0 is NaN!"<<std::endl;
+    if (angle[1] != angle[1]) std::cout<<"angle 1 is NaN!"<<std::endl;
+    /*
     if (angle[0] > float_type(1.0) || angle[1] > float_type(1.0)) {
       std::cout<<"Warning angle over 1: "<<angle[0]<<" "<<angle[1]<<" Resampling..."<<std::endl;
       angle = get_angle<float_type>(rng);
     }
+    */
 
+    float_type weight = start_weight;
     float_type d_remain;
     // census particles are born at time 0, more poisson distribution
     if (i<n_census)
@@ -132,10 +146,22 @@ int main(void) {
       event_count=event_count+1;
 
       float_type d_scatter = ( float_type( -log(rng.random()))/sig_s)/ratio;
+      float_type d_absorb = ( float_type( -log(rng.random()))/sig_a)/ratio;
+      /*
+      approx approx_scatter = approx_log_S1(uint16_t(random()%65536), 1);
+      approx approx_absorb = approx_log_S1(uint16_t(random()%65536), 1);
+      float_type d_scatter = -double(approx_scatter - max_int_log)/sig_s/ratio;
+      float_type d_absorb = -double(approx_absorb - max_int_log)/sig_a/ratio;
+      if(approx_scatter == max_int_log)
+        d_scatter = float_type(0.0);
+      if(approx_absorb == max_int_log)
+        d_absorb = float_type(0.0);
+      */
+
       int cross_face = -1;
       float_type d_boundary =get_distance_to_boundary(cross_face, pos, angle, x_cell, y_cell);
       float_type d_census = d_remain/ratio;
-      float_type d_move = std::min(d_boundary, std::min(d_scatter, d_census));
+      float_type d_move = std::min(d_boundary, std::min(d_census, std::min(d_scatter, d_absorb)));
 
       //std::cout<<"angle: "<<angle[0]<<", "<<angle[1]<<std::endl;
       //std::cout<<"x_cell, y_cell: "<<x_cell<<" ,"<<y_cell<<" x_pos, y_pos: "<<pos[0]<<", "<<pos[1]<<std::endl;
@@ -147,10 +173,41 @@ int main(void) {
       // reduce distace to census, use real distance
       d_remain = d_remain - d_move*ratio;
 
+      /*
+      // reduce weight, standard exponent will convert scFloatSidecar back to double
+      float_type ew_factor = exp(-(sig_a * d_move*ratio));
+      float_type absorbed_E = weight - (weight * ew_factor);
+
+      if (absorbed_E != absorbed_E)
+        std::cout<<"NaN in absorbed_E"<<std::endl;
+      if (absorbed_E  < scFloatSidecar(1.0e-18))
+        std::cout<<"this is bad, absorbed_E < 0"<<std::endl;
+
+      tally[x_cell][y_cell] += absorbed_E;
+      check_tally[x_cell][y_cell] += absorbed_E;
+      */
+      /*
+      // kahan sum for absorbed_E
+      // ammend this tally with correction, store pre-summed value
+      scFloatSidecar this_path_abs_E = absorbed_E - cell_corr_abs_E;
+      scFloatSidecar abs_E_old =cell_abs_E;
+
+      // update
+      cell_abs_E += this_path_abs_E;
+      // update correction
+      cell_corr_abs_E = (cell_abs_E - abs_E_old) - this_path_abs_E;
+      cell_abs_count++;
+      */
+
       // process census event
       if( d_move == d_census) {
         alive=false;
         census=true;
+      }
+      else if(d_move == d_absorb) {
+        alive=false;
+        census=false;
+        check_tally[x_cell][y_cell]+=weight;
       }
       else if(d_move == d_scatter)
         angle = get_angle<float_type>(rng);
@@ -200,14 +257,19 @@ int main(void) {
           pos[1] = 1.0;
         }
         // check if particle exits domain
-        if (x_cell > max_x_cell || x_cell < 0)
+        if (x_cell >= max_x_cell || x_cell < 0)
           alive= false;
-        if (y_cell > max_y_cell || y_cell < 0)
+        if (y_cell >= max_y_cell || y_cell < 0)
           alive = false;
       } // if event == boundary
     } // while(alive)
-    std::cout<<"Particle "<<i<<" , event count: "<<event_count<<" census: "<<census<<std::endl;
+    //std::cout<<"Particle "<<i<<" , event count: "<<event_count<<" census: "<<census<<std::endl;
   } // for(int i=0;i<n_particles;++i)
+
+  std::cout<<"x      y        abs_E      check_abs_E"<<std::endl;
+  for (size_t i=0; i<max_x_cell;++i)
+    for (size_t j=0;j<max_y_cell;++j)
+      std::cout<<i<<"  "<<j<<"  "<<tally[i][j]<<"   "<<check_tally[i][j]<<std::endl;
 
   return 0;
 }
