@@ -1,3 +1,7 @@
+/*
+ * Top-level code for a simple billion-core Monte Carlo simulation
+ */
+
 #include <iostream>
 #include <string>
 #include <cstdio>
@@ -8,6 +12,8 @@ extern "C" {
 #include "scAcceleratorAPI.h"
 #include "scNova.h"
 }
+
+extern void emit_nova_code();
 
 // Encapsulate machine state.
 struct S1State {
@@ -76,8 +82,7 @@ S1State parse_command_line(int argc, char *argv[]) {
 	break;
 	
       default:
-	std::cerr << argv[0] << ": internal error parsing the command line"
-		  << std::endl;
+	std::exit(EXIT_FAILURE);
 	break;
     }
   }
@@ -95,6 +100,24 @@ int main (int argc, char *argv[]) {
 		      s1_state.ape_rows, s1_state.ape_cols,
 		      s1_state.trace_flags,
 		      0, 0, 0);
-		       
+
+  // Compile the entire S1 program to a kernel.
+  scNovaInit();
+  scEmitLLKernelCreate();
+  eCUC(cuSetMaskMode, _, _, 1);
+  eCUC(cuSetGroupMode, _, _, 0);
+  eApeC(apeSetMask, _, _, 0);
+  emit_nova_code();
+  eCUC(cuHalt, _, _, _);
+  scKernelTranslate();
+
+  // Launch the S1 program and wait for it to finish.
+  extern LLKernel *llKernel;
+  scLLKernelLoad(llKernel, 0);
+  scLLKernelExecute(0);
+  scLLKernelWaitSignal();
+
+  // Shut down the S1 and the program.
+  scTerminateMachine();
   return EXIT_SUCCESS;
 }

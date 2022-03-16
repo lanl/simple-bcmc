@@ -1,9 +1,10 @@
 SCROOT = $(HOME)/src/SingularComputingMaterialProvidedToLANL/System\ Code
 CPPFLAGS = -I$(SCROOT)
+CXXFLAGS = -g -O2 -Wno-write-strings
 LDFLAGS = -L$(SCROOT)
 LIBS = -lS1
 
-SOURCES = main.cpp
+SOURCES = main.cpp emit.cpp
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
 all: simple-bcmc
