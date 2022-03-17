@@ -24,19 +24,21 @@ void assign_ape_coords(S1State& s1_state)
   // Tell each APE its row number.
   NovaExpr my_row(0);
   NovaExpr rowNum(0, NovaExpr::NovaCUVar);
-  CUFor(rowNum.expr, IntConst(1), IntConst(s1_state.ape_rows), IntConst(1));
-  global_get(my_row, my_row, getNorth);
-  ++my_row;
-  CUForEnd();
+  NovaCUForLoop(rowNum, 1, s1_state.ape_rows, 1,
+                [&]() {
+                  global_get(my_row, my_row, getNorth);
+                  ++my_row;
+                });
   --my_row;    // Use zero-based numbering.
 
   // Tell each APE its column number.
   NovaExpr my_col(0);
   NovaExpr colNum(0, NovaExpr::NovaCUVar);
-  CUFor(colNum.expr, IntConst(1), IntConst(s1_state.ape_cols), IntConst(1));
-  global_get(my_col, my_col, getWest);
-  ++my_col;
-  CUForEnd();
+  NovaCUForLoop(colNum, 1, s1_state.ape_cols, 1,
+                [&]() {
+                  global_get(my_col, my_col, getWest);
+                  ++my_col;
+                });
   --my_col;    // Use zero-based numbering.
 
   // Temporary

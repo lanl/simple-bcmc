@@ -8,6 +8,7 @@
 #define _NOVAPP_H_
 
 #include <stdexcept>
+#include <functional>
 
 extern "C" {
 #include "scAcceleratorAPI.h"
@@ -98,7 +99,7 @@ public:
   }
 
   friend NovaExpr operator+(NovaExpr lhs,
-			    const NovaExpr& rhs) {
+                            const NovaExpr& rhs) {
     lhs.expr = Add(lhs.expr, rhs.expr);
     return lhs;
   }
@@ -109,7 +110,7 @@ public:
   }
 
   friend NovaExpr operator-(NovaExpr lhs,
-			    const NovaExpr& rhs) {
+                            const NovaExpr& rhs) {
     lhs.expr = Sub(lhs.expr, rhs.expr);
     return lhs;
   }
@@ -120,7 +121,7 @@ public:
   }
 
   friend NovaExpr operator*(NovaExpr lhs,
-			    const NovaExpr& rhs) {
+                            const NovaExpr& rhs) {
     lhs.expr = Mul(lhs.expr, rhs.expr);
     return lhs;
   }
@@ -131,7 +132,7 @@ public:
   }
 
   friend NovaExpr operator/(NovaExpr lhs,
-			    const NovaExpr& rhs) {
+                            const NovaExpr& rhs) {
     lhs.expr = Div(lhs.expr, rhs.expr);
     return lhs;
   }
@@ -161,6 +162,16 @@ public:
     return *this;
   }
 };
+
+
+// Perform a for loop on the CU, taking the loop body as an argument.
+void NovaCUForLoop(NovaExpr var, int from, int to, int step,
+                   const std::function <void ()>& f)
+{
+  CUFor(var.expr, IntConst(from), IntConst(to), IntConst(step));
+  f();
+  CUForEnd();
+}
 
 
 #endif
