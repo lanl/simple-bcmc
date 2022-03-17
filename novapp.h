@@ -60,6 +60,7 @@ private:
 public:
   // Specify the types of variable a NovaExpr object can represent.
   typedef enum {
+        NovaInvalidType,
         NovaApeVar,
         NovaCUVar,
         NovaApeMem,
@@ -72,7 +73,7 @@ public:
   bool is_approx;     // true=Approx; false=Int
 
   // "Declare" a variable without "defining" it.
-  NovaExpr() { }
+  NovaExpr() : expr_type(NovaInvalidType) { }
 
   // Initialize an Approx from a double.
   NovaExpr(double d, nova_t type = NovaApeVar) {
@@ -95,6 +96,30 @@ public:
     is_approx = rhs.is_approx;
     define_expr();
     Set(expr, rhs.expr);
+    return *this;
+  }
+
+  NovaExpr& operator=(int rhs) {
+    if (expr_type == NovaInvalidType) {
+      // Default to an integer APE variable unless we're reassigning an
+      // existing NovaExpr.
+      expr_type = NovaApeVar;
+      is_approx = false;
+      define_expr();
+    }
+    Set(expr, IntConst(rhs));
+    return *this;
+  }
+
+  NovaExpr& operator=(double rhs) {
+    if (expr_type == NovaInvalidType) {
+      // Default to an approx APE variable unless we're reassigning an
+      // existing NovaExpr.
+      expr_type = NovaApeVar;
+      is_approx = true;
+      define_expr();
+    }
+    Set(expr, AConst(rhs));
     return *this;
   }
 
@@ -142,6 +167,17 @@ public:
     return *this;
   }
 
+  friend NovaExpr operator|(NovaExpr lhs,
+                            const NovaExpr& rhs) {
+    lhs.expr = Or(lhs.expr, rhs.expr);
+    return lhs;
+  }
+
+  NovaExpr& operator|=(const NovaExpr& rhs) {
+    Set(expr, Or(expr, rhs.expr));
+    return *this;
+  }
+
   NovaExpr& operator++() {
     Set(expr, Add(expr, IntConst(1)));
     return *this;
@@ -165,7 +201,7 @@ public:
 
 
 // Perform a for loop on the CU, taking the loop body as an argument.
-void NovaCUForLoop(NovaExpr var, int from, int to, int step,
+void NovaCUForLoop(NovaExpr& var, int from, int to, int step,
                    const std::function <void ()>& f)
 {
   CUFor(var.expr, IntConst(from), IntConst(to), IntConst(step));
