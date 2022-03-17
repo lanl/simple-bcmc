@@ -16,9 +16,9 @@ extern "C" {
 
 extern void emit_nova_code(S1State&);
 
-// Parse the command line into an s1_state.
+// Parse the command line into an S1State.
 S1State parse_command_line(int argc, char *argv[]) {
-  S1State s1_state;
+  S1State s1;
   struct option long_options[] = 
     {{"emulate", no_argument, nullptr, 'e'},
      {"trace", required_argument, nullptr, 't'},
@@ -30,11 +30,11 @@ S1State parse_command_line(int argc, char *argv[]) {
   while ((c = getopt_long(argc, argv, "h:f:c:a:h", long_options, nullptr)) != -1) {
     switch (c) {
       case 'e':
-	s1_state.emulated = true;
+	s1.emulated = true;
 	break;
 	
       case 't':
-	s1_state.trace_flags = std::stoi(optarg, nullptr, 0);
+	s1.trace_flags = std::stoi(optarg, nullptr, 0);
 	break;
 	
       case 'c':
@@ -44,8 +44,8 @@ S1State parse_command_line(int argc, char *argv[]) {
 		    << std::endl;
 	  std::exit(EXIT_FAILURE);
 	}
-	s1_state.chip_cols = cc;
-	s1_state.chip_rows = cr;
+	s1.chip_cols = cc;
+	s1.chip_rows = cr;
 	break;
 	
       case 'a':
@@ -55,8 +55,8 @@ S1State parse_command_line(int argc, char *argv[]) {
 		    << std::endl;
 	  std::exit(EXIT_FAILURE);
 	}
-	s1_state.ape_cols = ac;
-	s1_state.ape_rows = ar;
+	s1.ape_cols = ac;
+	s1.ape_rows = ar;
 	break;
 
       case 'h':
@@ -71,19 +71,19 @@ S1State parse_command_line(int argc, char *argv[]) {
 	break;
     }
   }
-  return s1_state;
+  return s1;
 }
 
 int main (int argc, char *argv[]) {
   // Parse the command line.
-  S1State s1_state = parse_command_line(argc, argv);
+  S1State s1 = parse_command_line(argc, argv);
 
   // Initialize the S1.
   initSingularArithmetic();
-  scInitializeMachine(s1_state.emulated ? scEmulated : scRealMachine,
-		      s1_state.chip_rows, s1_state.chip_cols,
-		      s1_state.ape_rows, s1_state.ape_cols,
-		      s1_state.trace_flags,
+  scInitializeMachine(s1.emulated ? scEmulated : scRealMachine,
+		      s1.chip_rows, s1.chip_cols,
+		      s1.ape_rows, s1.ape_cols,
+		      s1.trace_flags,
 		      0, 0, 0);
 
   // Compile the entire S1 program to a kernel.
@@ -92,7 +92,7 @@ int main (int argc, char *argv[]) {
   eCUC(cuSetMaskMode, _, _, 1);
   eCUC(cuSetGroupMode, _, _, 0);
   eApeC(apeSetMask, _, _, 0);
-  emit_nova_code(s1_state);
+  emit_nova_code(s1);
   eCUC(cuHalt, _, _, _);
   scKernelTranslate();
 

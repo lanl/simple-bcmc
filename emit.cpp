@@ -19,12 +19,12 @@ void global_get(NovaExpr dest, NovaExpr src, int dir)
 }
 
 // Tell each APE its row and column number.
-void assign_ape_coords(S1State& s1_state, NovaExpr& ape_row, NovaExpr& ape_col)
+void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col)
 {
   // Tell each APE its row number.
   ape_row = 0;
   NovaExpr rowNum(0, NovaExpr::NovaCUVar);
-  NovaCUForLoop(rowNum, 1, s1_state.ape_rows, 1,
+  NovaCUForLoop(rowNum, 1, s1.ape_rows, 1,
                 [&]() {
                   global_get(ape_row, ape_row, getNorth);
                   ++ape_row;
@@ -34,7 +34,7 @@ void assign_ape_coords(S1State& s1_state, NovaExpr& ape_row, NovaExpr& ape_col)
   // Tell each APE its column number.
   ape_col = 0;
   NovaExpr colNum(0, NovaExpr::NovaCUVar);
-  NovaCUForLoop(colNum, 1, s1_state.ape_cols, 1,
+  NovaCUForLoop(colNum, 1, s1.ape_cols, 1,
                 [&]() {
                   global_get(ape_col, ape_col, getWest);
                   ++ape_col;
@@ -44,15 +44,15 @@ void assign_ape_coords(S1State& s1_state, NovaExpr& ape_row, NovaExpr& ape_col)
 
 
 // OR-reduce a value from all APEs to the CU.
-void or_reduce_apes_to_cu(S1State& s1_state, NovaExpr& cu_var, NovaExpr& ape_var)
+void or_reduce_apes_to_cu(S1State& s1, NovaExpr& cu_var, NovaExpr& ape_var)
 {
   // Loop over all chips, ORing one value per chip into cu_var.
   cu_var = 0;
   NovaExpr chip_row(0, NovaExpr::NovaCUVar);
-  NovaCUForLoop(chip_row, 0, s1_state.chip_rows - 1, 1,
+  NovaCUForLoop(chip_row, 0, s1.chip_rows - 1, 1,
 		[&]() {
 		  NovaExpr chip_col(0, NovaExpr::NovaCUVar);
-		  NovaCUForLoop(chip_col, 0, s1_state.chip_cols - 1, 1,
+		  NovaCUForLoop(chip_col, 0, s1.chip_cols - 1, 1,
 				[&]() {
 				  // ReadOr all APEs' ape_var into CU data
 				  // memory location 0.
@@ -76,10 +76,10 @@ void or_reduce_apes_to_cu(S1State& s1_state, NovaExpr& cu_var, NovaExpr& ape_var
 
 
 // Emit the entire S1 program to a low-level kernel.
-void emit_nova_code(S1State& s1_state)
+void emit_nova_code(S1State& s1)
 {
   NovaExpr ape_row, ape_col;
-  assign_ape_coords(s1_state, ape_row, ape_col);
+  assign_ape_coords(s1, ape_row, ape_col);
 
   // Temporary
   TraceOneRegisterAllApes(ape_row.expr);
@@ -88,5 +88,5 @@ void emit_nova_code(S1State& s1_state)
   // Temporary
   NovaExpr cu_var(0, NovaExpr::NovaCUVar);
   NovaExpr ape_var = ape_col;
-  or_reduce_apes_to_cu(s1_state, cu_var, ape_var);
+  or_reduce_apes_to_cu(s1, cu_var, ape_var);
 }
