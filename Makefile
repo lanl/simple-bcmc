@@ -12,7 +12,7 @@ all: simple-bcmc
 simple-bcmc: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o simple-bcmc $(OBJECTS) $(LDFLAGS) $(LIBS)
 
-%.o: %.cpp novapp.h
+%.o: %.cpp novapp.h simple-bcmc.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
 
 clean:

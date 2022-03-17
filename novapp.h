@@ -140,6 +140,26 @@ public:
     Set(expr, Div(expr, rhs.expr));
     return *this;
   }
+
+  NovaExpr& operator++() {
+    Set(expr, Add(expr, IntConst(1)));
+    return *this;
+  }
+
+  NovaExpr& operator++(int not_used) {
+    Set(expr, Add(expr, IntConst(1)));
+    return *this;
+  }
+
+  NovaExpr& operator--() {
+    Set(expr, Sub(expr, IntConst(1)));
+    return *this;
+  }
+
+  NovaExpr& operator--(int not_used) {
+    Set(expr, Sub(expr, IntConst(1)));
+    return *this;
+  }
 };
 
 

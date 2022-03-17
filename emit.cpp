@@ -3,27 +3,50 @@
  */
 
 #include <novapp.h>
+#include "simple-bcmc.h"
 
-void emit_nova_code()
+// Perform a global Get operation.
+void global_get(NovaExpr dest, NovaExpr src, int dir)
 {
-  // Temporary placeholder code
-  NovaExpr A, B, C;
-  A = NovaExpr(10);
-  B = NovaExpr(20);
-  C = A + B;
-  TraceOneRegisterOneApe(A.expr, 0, 0);
-  TraceOneRegisterOneApe(B.expr, 0, 0);
-  TraceOneRegisterOneApe(C.expr, 0, 0);
-  
-  /*
-  DeclareApeVar(A, Int);
-  Set(A, IntConst(10));
-  DeclareApeVar(B, Int);
-  Set(B, IntConst(20));
-  DeclareApeVar(C, Int);
-  Set(C, Add(A, B));
-  TraceOneRegisterOneApe(A, 0, 0);
-  TraceOneRegisterOneApe(B, 0, 0);
-  TraceOneRegisterOneApe(C, 0, 0);
-  */
+  // Get 16 bits, one at a time.
+  eApeC(apeGetGStart, _, _, dir);
+  eApeC(apeGetGStartDone, 0, src.expr, 0);
+  for (int i = 0; i < 16; ++i)
+    eApeC(apeGetGMove, _, _, _);
+  eApeC(apeGetGMoveDone, _, _, _);
+  eApeC(apeGetGEnd, dest.expr, src.expr, dir);
+
+}
+
+// Tell each APE its row and column number.
+void assign_ape_coords(S1State& s1_state)
+{
+  // Tell each APE its row number.
+  NovaExpr my_row(0);
+  NovaExpr rowNum(0, NovaExpr::NovaCUVar);
+  CUFor(rowNum.expr, IntConst(1), IntConst(s1_state.ape_rows), IntConst(1));
+  global_get(my_row, my_row, getNorth);
+  ++my_row;
+  CUForEnd();
+  --my_row;    // Use zero-based numbering.
+
+  // Tell each APE its column number.
+  NovaExpr my_col(0);
+  NovaExpr colNum(0, NovaExpr::NovaCUVar);
+  CUFor(colNum.expr, IntConst(1), IntConst(s1_state.ape_cols), IntConst(1));
+  global_get(my_col, my_col, getWest);
+  ++my_col;
+  CUForEnd();
+  --my_col;    // Use zero-based numbering.
+
+  // Temporary
+  TraceOneRegisterAllApes(my_row.expr);
+  TraceOneRegisterAllApes(my_col.expr);
+}
+
+
+// Emit the entire S1 program to a low-level kernel.
+void emit_nova_code(S1State& s1_state)
+{
+  assign_ape_coords(s1_state);
 }

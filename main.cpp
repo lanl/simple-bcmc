@@ -7,29 +7,14 @@
 #include <cstdio>
 #include <unistd.h>
 #include <getopt.h>
+#include "simple-bcmc.h"
 
 extern "C" {
 #include "scAcceleratorAPI.h"
 #include "scNova.h"
 }
 
-extern void emit_nova_code();
-
-// Encapsulate machine state.
-struct S1State {
-  bool emulated;    // true=emulated; false=real hardware
-  int trace_flags;  // Trace flags for emulator
-  int chip_cols;    // Columns of chips
-  int chip_rows;    // Rows of chips
-  int ape_cols;     // APE columns per chip
-  int ape_rows;     // APE rows per chip
-
-  S1State() : emulated(false), trace_flags(0),
-	      chip_cols(1), chip_rows(1),
-	      ape_cols(44), ape_rows(48)
-  {
-  }
-};
+extern void emit_nova_code(S1State&);
 
 // Parse the command line into an s1_state.
 S1State parse_command_line(int argc, char *argv[]) {
@@ -107,7 +92,7 @@ int main (int argc, char *argv[]) {
   eCUC(cuSetMaskMode, _, _, 1);
   eCUC(cuSetGroupMode, _, _, 0);
   eApeC(apeSetMask, _, _, 0);
-  emit_nova_code();
+  emit_nova_code(s1_state);
   eCUC(cuHalt, _, _, _);
   scKernelTranslate();
 
