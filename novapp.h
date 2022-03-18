@@ -120,20 +120,30 @@ public:
   }
 
   NovaExpr& operator=(int rhs) {
-    if (expr_type == NovaInvalidType) {
-      // Default to an integer APE variable unless we're reassigning an
-      // existing NovaExpr.
-      expr_type = NovaApeVar;
-      is_approx = false;
-      define_expr();
+    switch (expr_type) {
+      case NovaInvalidType:
+        // Default to an integer APE variable because we're not reassigning an
+        // existing NovaExpr.
+        expr_type = NovaApeVar;
+        is_approx = false;
+        define_expr();
+        Set(expr, IntConst(rhs));
+        break;
+      case NovaRegister:
+        // Use a low-level mechanism to assign a value to a CU or APE register.
+        eCUC(cuSet, expr, _, rhs);
+        break;
+      default:
+        // Normally we use Nova to assign an integer constant.
+        Set(expr, IntConst(rhs));
+        break;
     }
-    Set(expr, IntConst(rhs));
     return *this;
   }
 
   NovaExpr& operator=(double rhs) {
     if (expr_type == NovaInvalidType) {
-      // Default to an approx APE variable unless we're reassigning an
+      // Default to an approx APE variable because we're not reassigning an
       // existing NovaExpr.
       expr_type = NovaApeVar;
       is_approx = true;

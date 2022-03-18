@@ -54,7 +54,8 @@ void or_reduce_apes_to_cu(S1State& s1, NovaExpr& cu_var, NovaExpr& ape_var)
   NovaCUForLoop(active_chip_row, 0, s1.chip_rows - 1, 1, [&]() {
     NovaCUForLoop(active_chip_col, 0, s1.chip_cols - 1, 1, [&]() {
       // Compute an OR across all APEs on the current chip.
-      eCUC(cuSet, active_ape_col.expr, _, -1);
+      // eCUC(cuSet, active_ape_col.expr, _, -1);
+      active_ape_col = -1;
       eCUC(cuSetRWAddress, _, _, &chip_or);
       int apeRChanged = apeR1;  // Register indicating ape_var is nonzero for some APE on the current chip.
       eControl(controlOpReserveApeReg, apeRChanged);
