@@ -22,6 +22,7 @@ private:
   // of expr_type and is_approx.
   void define_expr() {
     if (is_approx)
+      // Approx
       switch (expr_type) {
         case NovaApeVar:
           ApeVar(expr, Approx);
@@ -39,6 +40,7 @@ private:
           throw std::invalid_argument("invalid nova_t passed to NovaExpr");
       }
     else
+      // Int
       switch (expr_type) {
         case NovaApeVar:
           ApeVar(expr, Int);
@@ -60,7 +62,8 @@ private:
 public:
   // Specify the types of variable a NovaExpr object can represent.
   typedef enum {
-        NovaInvalidType,
+        NovaInvalidType,  // Uninitialized
+        NovaRegister,     // Hard-wired APE or CU register number
         NovaApeVar,
         NovaCUVar,
         NovaApeMem,
@@ -75,7 +78,7 @@ public:
   // "Declare" a variable without "defining" it.
   NovaExpr() : expr_type(NovaInvalidType) { }
 
-  // Initialize an Approx from a double.
+  // Initialize a Nova Approx from a double.
   NovaExpr(double d, nova_t type = NovaApeVar) {
     expr_type = type;
     is_approx = true;
@@ -83,12 +86,29 @@ public:
     Set(expr, AConst(d));
   }
 
-  // Initialize an Approx from an int.
+  // Initialize a Nova Int from an int.
   NovaExpr(int i, nova_t type = NovaApeVar) {
     expr_type = type;
     is_approx = false;
-    define_expr();
-    Set(expr, IntConst(i));
+    if (type == NovaRegister)
+      expr = i;  // Special case for hard-wired registers
+    else {
+      define_expr();
+      Set(expr, IntConst(i));
+    }
+  }
+
+  // Return the address of a variable stored in either APE or CU memory.
+  int operator&() {
+    switch (expr_type) {
+      case NovaApeMem:
+      case NovaCUMem:
+        return MemAddress(expr);
+        break;
+      default:
+        throw std::domain_error("attempt to take the address of a non-memory variable");
+        break;
+    }
   }
 
   NovaExpr& operator=(const NovaExpr& rhs) {
@@ -209,5 +229,10 @@ void NovaCUForLoop(NovaExpr& var, int from, int to, int step,
   CUForEnd();
 }
 
+// Predefine wrappers for certain registers.
+inline NovaExpr active_chip_row = NovaExpr(cuRChipRow, NovaExpr::NovaRegister);
+inline NovaExpr active_chip_col = NovaExpr(cuRChipCol, NovaExpr::NovaRegister);
+inline NovaExpr active_ape_row = NovaExpr(cuRApeRow, NovaExpr::NovaRegister);
+inline NovaExpr active_ape_col = NovaExpr(cuRApeCol, NovaExpr::NovaRegister);
 
 #endif
