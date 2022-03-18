@@ -24,7 +24,7 @@ void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col)
   // Tell each APE its row number.
   ape_row = 0;
   NovaExpr rowNum(0, NovaExpr::NovaCUVar);
-  NovaCUForLoop(rowNum, 1, s1.ape_rows, 1,
+  NovaCUForLoop(rowNum, 1, s1.ape_rows*s1.chip_rows, 1,
                 [&]() {
                   global_get(ape_row, ape_row, getNorth);
                   ++ape_row;
@@ -34,7 +34,7 @@ void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col)
   // Tell each APE its column number.
   ape_col = 0;
   NovaExpr colNum(0, NovaExpr::NovaCUVar);
-  NovaCUForLoop(colNum, 1, s1.ape_cols, 1,
+  NovaCUForLoop(colNum, 1, s1.ape_cols*s1.chip_cols, 1,
                 [&]() {
                   global_get(ape_col, ape_col, getWest);
                   ++ape_col;
@@ -64,45 +64,11 @@ void or_reduce_apes_to_cu(S1State& s1, NovaExpr& cu_var, NovaExpr& ape_var)
       eControl(controlOpReleaseApeReg, apeRChanged);
 
       // OR the per-chip value into cu_var.
-      CUIf(Eq(chip_or.expr, IntConst(1)));
+      CUIf(Ne(chip_or.expr, IntConst(0)));
       cu_var = 1;
       CUFi();
-      TraceMessage("  Checking ChipRow "); TraceRegisterCU(active_chip_row.expr);
-      TraceMessage("           ChipCol "); TraceRegisterCU(active_chip_col.expr);
-      TraceMessage("           Changed "); TraceRegisterCU(chip_or.expr);
     });
   });
-}
-
-
-// Temporary
-void original_or(S1State& s1, NovaExpr& ape_var)
-{
-  // Readback from Apes whether anything changed, and if not then set NoChanges.
-  // We use ReadOr to Or the changed flag in all the Apes in each chip,
-  //   and read the chips sequentially and Or those results in the CU.
-  DeclareCUVar(SomethingChangedInGrid,Int);
-  Set(SomethingChangedInGrid,IntConst(0));
-  DeclareCUMem(SomethingChangedInChip, Int);
-  CUFor(cuRChipRow, IntConst(0), IntConst(s1.chip_rows - 1), IntConst(1));
-  CUFor(cuRChipCol, IntConst(0), IntConst(s1.chip_cols - 1), IntConst(1));
-  eCUC(cuSet, cuRApeCol, _, -1);
-  eCUC(cuSetRWAddress, _, _, MemAddress(SomethingChangedInChip));
-  int apeRChanged = apeR1;
-  eControl(controlOpReserveApeReg,apeRChanged);
-  eApeX(apeSet, apeRChanged, _, ape_var.expr);
-  int propDelay = 4;  // this is plenty long
-  eCUC(cuRead, _, rwIgnoreMasks|rwUseCUMemory, (propDelay<<8)|apeRChanged);
-  eControl(controlOpReleaseApeReg,apeRChanged);
-  // Or the value read into SomethingChangedInGrid
-  CUIf(Eq(SomethingChangedInChip,IntConst(1)));
-  Set(SomethingChangedInGrid,IntConst(1));
-  CUFi();
-  TraceMessage("  Checking ChipRow "); TraceRegisterCU(cuRChipRow);
-  TraceMessage("           ChipCol "); TraceRegisterCU(cuRChipCol);
-  TraceMessage("           Changed "); TraceRegisterCU(SomethingChangedInChip);
-  CUForEnd();
-  CUForEnd();
 }
 
 
@@ -120,5 +86,5 @@ void emit_nova_code(S1State& s1)
   NovaExpr cu_var(0, NovaExpr::NovaCUVar);
   NovaExpr ape_var = ape_col;
   or_reduce_apes_to_cu(s1, cu_var, ape_var);
-  //original_or(s1, ape_var);
+  TraceRegisterCU(cu_var.expr);
 }
