@@ -62,15 +62,15 @@ void Add32Bits(scExpr sum_hi, scExpr sum_lo,
 /* Add two 32-bit integers, each represented as a vector of two 16-bit Ints.
  * The arguments alternate a base name (Nova vector) and an index, pretending
  * this is indexing N 32-bit elements rather than N*2 16-bit elements. */
-#define ADD32(OUT, OUT_IDX, IN1, IN1_IDX, IN2, IN2_IDX)         \
-  do {                                                          \
-    Add32Bits(IndexVector(OUT, IntConst(2*(OUT_IDX))),          \
-              IndexVector(OUT, IntConst(2*(OUT_IDX) + 1)),      \
-              IndexVector(IN1, IntConst(2*(IN1_IDX))),          \
-              IndexVector(IN1, IntConst(2*(IN1_IDX) + 1)),      \
-              IndexVector(IN2, IntConst(2*(IN2_IDX))),          \
-              IndexVector(IN2, IntConst(2*(IN2_IDX) + 1)));     \
-  }                                                             \
+#define ADD32(OUT, OUT_IDX, IN1, IN1_IDX, IN2, IN2_IDX) \
+  do {                                                  \
+    Add32Bits(OUT[2*(OUT_IDX)].expr,                    \
+              OUT[2*(OUT_IDX) + 1].expr,                \
+              IN1[2*(IN1_IDX)].expr,                    \
+              IN1[2*(IN1_IDX + 1)].expr,                \
+              IN2[2*(IN2_IDX)].expr,                    \
+              IN2[2*(IN2_IDX + 1)].expr);               \
+  }                                                     \
   while (0)
 
 // Key injection for round/4.
@@ -79,7 +79,7 @@ void inject_key(int r)
   int i;
 
   for (i = 0; i < 4; i++)
-    ADD32(random_3fry.expr, i, random_3fry.expr, i, scratch_3fry.expr, (r + i)%5);
+    ADD32(random_3fry, i, random_3fry, i, scratch_3fry, (r + i)%5);
   Add32Bits(random_3fry[3*2].expr,
             random_3fry[3*2 + 1].expr,
             random_3fry[3*2].expr,
@@ -94,7 +94,7 @@ void mix(int a, int b, int ridx)
   int rot = rot_32x4[ridx];  // Number of bits by which to left-rotate
 
   // Increment random_3fry[a] by random_3fry[b].
-  ADD32(random_3fry.expr, a, random_3fry.expr, a, random_3fry.expr, b);
+  ADD32(random_3fry, a, random_3fry, a, random_3fry, b);
 
   // Left-rotate random_3fry[b] by rot.
   NovaExpr hi(0), lo(0);
@@ -145,7 +145,7 @@ void threefry4x32()
     scratch_3fry[9] ^= key_3fry[lo];
   }
   for (i = 0; i < 4; i++)
-    ADD32(random_3fry.expr, i, random_3fry.expr, i, scratch_3fry.expr, i);
+    ADD32(random_3fry, i, random_3fry, i, scratch_3fry, i);
 
   // Perform 20 rounds of mixing.
   for (r = 0; r < 20; r++) {
