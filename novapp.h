@@ -211,6 +211,8 @@ public:
     return *this;
   }
 
+  // ----- Basic arithmetic -----
+
   friend NovaExpr operator+(NovaExpr lhs,
                             const NovaExpr& rhs) {
     lhs.expr = Add(lhs.expr, rhs.expr);
@@ -255,6 +257,8 @@ public:
     return *this;
   }
 
+  // ----- Bit manipulation -----
+
   friend NovaExpr operator|(NovaExpr lhs,
                             const NovaExpr& rhs) {
     lhs.expr = Or(lhs.expr, rhs.expr);
@@ -265,6 +269,72 @@ public:
     Set(expr, Or(expr, rhs.expr));
     return *this;
   }
+
+  friend NovaExpr operator&(NovaExpr lhs,
+                            const NovaExpr& rhs) {
+    lhs.expr = And(lhs.expr, rhs.expr);
+    return lhs;
+  }
+
+  NovaExpr& operator&=(const NovaExpr& rhs) {
+    Set(expr, And(expr, rhs.expr));
+    return *this;
+  }
+
+  friend NovaExpr operator^(NovaExpr lhs,
+                            const NovaExpr& rhs) {
+    lhs.expr = Xor(lhs.expr, rhs.expr);
+    return lhs;
+  }
+
+  NovaExpr& operator^=(const NovaExpr& rhs) {
+    Set(expr, Xor(expr, rhs.expr));
+    return *this;
+  }
+
+  friend NovaExpr operator<<(NovaExpr lhs,
+                            const NovaExpr& rhs) {
+    lhs.expr = Asl(lhs.expr, rhs.expr);
+    return lhs;
+  }
+
+  friend NovaExpr operator<<(NovaExpr lhs, const int rhs) {
+    lhs.expr = Asl(lhs.expr, IntConst(rhs));
+    return lhs;
+  }
+
+  NovaExpr& operator<<=(const NovaExpr& rhs) {
+    Set(expr, Asl(expr, rhs.expr));
+    return *this;
+  }
+
+  NovaExpr& operator<<=(const int rhs) {
+    Set(expr, Asl(expr, IntConst(rhs)));
+    return *this;
+  }
+
+  friend NovaExpr operator>>(NovaExpr lhs,
+                            const NovaExpr& rhs) {
+    lhs.expr = Asr(lhs.expr, rhs.expr);
+    return lhs;
+  }
+
+  friend NovaExpr operator>>(NovaExpr lhs, const int rhs) {
+    lhs.expr = Asr(lhs.expr, IntConst(rhs));
+    return lhs;
+  }
+
+  NovaExpr& operator>>=(const NovaExpr& rhs) {
+    Set(expr, Asr(expr, rhs.expr));
+    return *this;
+  }
+
+  NovaExpr& operator>>=(const int rhs) {
+    Set(expr, Asr(expr, IntConst(rhs)));
+    return *this;
+  }
+
+  // ----- Prefix and postfix operators -----
 
   NovaExpr& operator++() {
     Set(expr, Add(expr, IntConst(1)));
@@ -286,6 +356,8 @@ public:
     return *this;
   }
 
+  // ----- Index operators -----
+
   NovaExpr operator[](std::size_t idx) {
     NovaExpr val;
     val.is_approx = is_approx;
@@ -297,6 +369,32 @@ public:
       case NovaCUMemVector:
         val.expr_type = NovaCUMem;
         val.expr = IndexVector(expr, idx);
+        break;
+      case NovaApeMemArray:
+        val.expr_type = NovaApeMem;
+        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        break;
+      case NovaCUMemArray:
+        val.expr_type = NovaCUMem;
+        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        break;
+      default:
+        throw std::invalid_argument("operator[] applied to a scalar");
+    }
+    return val;
+  }
+
+  NovaExpr operator[](const NovaExpr& idx) {
+    NovaExpr val;
+    val.is_approx = is_approx;
+    switch (expr_type) {
+      case NovaApeMemVector:
+        val.expr_type = NovaApeMem;
+        val.expr = IndexVector(expr, idx.expr);
+        break;
+      case NovaCUMemVector:
+        val.expr_type = NovaCUMem;
+        val.expr = IndexVector(expr, idx.expr);
         break;
       case NovaApeMemArray:
         val.expr_type = NovaApeMem;

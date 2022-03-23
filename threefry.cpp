@@ -6,10 +6,10 @@
 #include "simple-bcmc.h"
 
 // Each of the following represent four 32-bit numbers stored as eight Ints.
-Declare(counter_3fry);  // Input: Loop counter
-Declare(key_3fry);      // Input: Key (e.g., APE ID)
-Declare(random_3fry);   // Output: Random numbers
-Declare(scratch_3fry);  // Internal: Scratch space
+NovaExpr counter_3fry;  // Input: Loop counter
+NovaExpr key_3fry;      // Input: Key (e.g., APE ID)
+NovaExpr random_3fry;   // Output: Random numbers
+NovaExpr scratch_3fry;  // Internal: Scratch space
 
 // Define the list of Threefry 32x4 rotation constants.
 const int rot_32x4[] = {
@@ -79,11 +79,11 @@ void inject_key(int r)
   int i;
 
   for (i = 0; i < 4; i++)
-    ADD32(random_3fry, i, random_3fry, i, scratch_3fry, (r + i)%5);
-  Add32Bits(IndexVector(random_3fry, IntConst(3*2)),
-            IndexVector(random_3fry, IntConst(3*2 + 1)),
-            IndexVector(random_3fry, IntConst(3*2)),
-            IndexVector(random_3fry, IntConst(3*2 + 1)),
+    ADD32(random_3fry.expr, i, random_3fry.expr, i, scratch_3fry.expr, (r + i)%5);
+  Add32Bits(random_3fry[3*2].expr,
+            random_3fry[3*2 + 1].expr,
+            random_3fry[3*2].expr,
+            random_3fry[3*2 + 1].expr,
             IntConst(0),
             IntConst(r));
 }
@@ -94,48 +94,32 @@ void mix(int a, int b, int ridx)
   int rot = rot_32x4[ridx];  // Number of bits by which to left-rotate
 
   // Increment random_3fry[a] by random_3fry[b].
-  ADD32(random_3fry, a, random_3fry, a, random_3fry, b);
+  ADD32(random_3fry.expr, a, random_3fry.expr, a, random_3fry.expr, b);
 
   // Left-rotate random_3fry[b] by rot.
-  DeclareApeVar(hi, Int);
-  DeclareApeVar(lo, Int);
+  NovaExpr hi(0), lo(0);
   if (rot >= 16) {
     // To rotate by rot >= 16, swap the high and low Ints then prepare to
     // rotate by rot - 16.
-    Set(hi, IndexVector(random_3fry, IntConst(b*2)));
-    Set(lo, IndexVector(random_3fry, IntConst(b*2 + 1)));
-    Set(IndexVector(random_3fry, IntConst(b*2 + 1)), hi);
-    Set(IndexVector(random_3fry, IntConst(b*2)), lo);
+    hi = random_3fry[b*2];
+    lo = random_3fry[b*2 + 1];
+    random_3fry[b*2 + 1] = hi;
+    random_3fry[b*2] = lo;
     rot -= 16;
   }
   if (rot != 0) {
-    Set(hi, Asl(IndexVector(random_3fry, IntConst(b*2)),
-                IntConst(rot)));
-    Set(lo, Asl(IndexVector(random_3fry, IntConst(b*2 + 1)),
-                IntConst(rot)));
-    DeclareApeVar(mask, Int);
-    Set(mask, IntConst((1<<rot) - 1));
-    Set(hi,
-        Or(hi,
-           And(Asr(IndexVector(random_3fry, IntConst(b*2 + 1)),
-                   IntConst(16 - rot)),
-               mask)));
-    Set(lo,
-        Or(lo,
-           And(Asr(IndexVector(random_3fry, IntConst(b*2)),
-                   IntConst(16 - rot)),
-               mask)));
-    Set(IndexVector(random_3fry, IntConst(b*2)), hi);
-    Set(IndexVector(random_3fry, IntConst(b*2 + 1)), lo);
+    hi = random_3fry[b*2]<<rot;
+    lo = random_3fry[b*2 + 1]<<rot;
+    NovaExpr mask((1<<rot) - 1);
+    hi |= (random_3fry[b*2 + 1]<<(16 - rot)) & mask;
+    lo |= (random_3fry[b*2]<<(16 - rot)) & mask;
+    random_3fry[b*2] = hi;
+    random_3fry[b*2 + 1] = lo;
   }
 
   // Xor the new random_3fry[b] by random_3fry[a].
-  Set(IndexVector(random_3fry, IntConst(b*2)),
-      Xor(IndexVector(random_3fry, IntConst(b*2)),
-          IndexVector(random_3fry, IntConst(a*2))));
-  Set(IndexVector(random_3fry, IntConst(b*2 + 1)),
-      Xor(IndexVector(random_3fry, IntConst(b*2 + 1)),
-          IndexVector(random_3fry, IntConst(a*2 + 1))));
+  random_3fry[b*2] ^= random_3fry[a*2];
+  random_3fry[b*2 + 1] ^= random_3fry[a*2 + 1];
 }
 
 /* Use counter_3fry and key_3fry to generate random numbers random_3fry. */
@@ -145,29 +129,23 @@ void threefry4x32()
   int i;
 
   /* Initialize both the internal and output state. */
-  ApeMemVector(random_3fry, Int, 8);
-  ApeMemVector(scratch_3fry, Int, 10);
-  Set(IndexVector(scratch_3fry, IntConst(8)), IntConst(0x1BD1));
-  Set(IndexVector(scratch_3fry, IntConst(9)), IntConst(0x1BDA));
-
+  int dummy_int;  // Hack needed to declare a vector.
+  random_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  scratch_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 10);
+  scratch_3fry[8] = 0x1BD1;
+  scratch_3fry[9] = 0x1BDA;
   for (i = 0; i < 4; i++) {
-    DeclareApeVar(hi, Int);
-    DeclareApeVar(lo, Int);
-    Set(hi, IntConst(i*2));
-    Set(lo, IntConst(i*2 + 1));
-    Set(IndexVector(scratch_3fry, hi), IndexVector(key_3fry, hi));
-    Set(IndexVector(scratch_3fry, lo), IndexVector(key_3fry, lo));
-    Set(IndexVector(random_3fry, hi), IndexVector(counter_3fry, hi));
-    Set(IndexVector(random_3fry, lo), IndexVector(counter_3fry, lo));
-    Set(IndexVector(scratch_3fry, IntConst(8)),
-        Xor(IndexVector(scratch_3fry, IntConst(8)),
-            IndexVector(key_3fry, hi)));
-    Set(IndexVector(scratch_3fry, IntConst(9)),
-        Xor(IndexVector(scratch_3fry, IntConst(9)),
-            IndexVector(key_3fry, lo)));
+    NovaExpr hi(i*2);
+    NovaExpr lo(i*2 + 1);
+    scratch_3fry[hi] = key_3fry[hi];
+    scratch_3fry[lo] = key_3fry[lo];
+    random_3fry[hi] = counter_3fry[hi];
+    random_3fry[lo] = counter_3fry[lo];
+    scratch_3fry[8] ^= key_3fry[hi];
+    scratch_3fry[9] ^= key_3fry[lo];
   }
   for (i = 0; i < 4; i++)
-    ADD32(random_3fry, i, random_3fry, i, scratch_3fry, i);
+    ADD32(random_3fry.expr, i, random_3fry.expr, i, scratch_3fry.expr, i);
 
   // Perform 20 rounds of mixing.
   for (r = 0; r < 20; r++) {
