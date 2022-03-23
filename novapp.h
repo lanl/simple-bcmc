@@ -231,8 +231,8 @@ public:
 
 
 // Perform a for loop on the CU, taking the loop body as an argument.
-void NovaCUForLoop(NovaExpr& var, int from, int to, int step,
-                   const std::function <void ()>& f)
+static void NovaCUForLoop(NovaExpr& var, int from, int to, int step,
+			  const std::function <void ()>& f)
 {
   CUFor(var.expr, IntConst(from), IntConst(to), IntConst(step));
   f();
