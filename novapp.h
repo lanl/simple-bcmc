@@ -166,6 +166,7 @@ public:
     return 0;  // Should never get here.
   }
 
+  // Assign one NovaExpr to another using Nova's Set macro.
   NovaExpr& operator=(const NovaExpr& rhs) {
     expr_type = rhs.expr_type;
     is_approx = rhs.is_approx;
@@ -174,6 +175,7 @@ public:
     return *this;
   }
 
+  // Assign an integer constant to a NovaExpr.
   NovaExpr& operator=(int rhs) {
     switch (expr_type) {
       case NovaInvalidType:
@@ -196,6 +198,7 @@ public:
     return *this;
   }
 
+  // Assign a floating-point constant to a NovaExpr.
   NovaExpr& operator=(double rhs) {
     if (expr_type == NovaInvalidType) {
       // Default to an approx APE variable because we're not reassigning an
@@ -281,6 +284,32 @@ public:
   NovaExpr& operator--(int not_used) {
     Set(expr, Sub(expr, IntConst(1)));
     return *this;
+  }
+
+  NovaExpr operator[](std::size_t idx) {
+    NovaExpr val;
+    val.is_approx = is_approx;
+    switch (expr_type) {
+      case NovaApeMemVector:
+        val.expr_type = NovaApeMem;
+        val.expr = IndexVector(expr, idx);
+        break;
+      case NovaCUMemVector:
+        val.expr_type = NovaCUMem;
+        val.expr = IndexVector(expr, idx);
+        break;
+      case NovaApeMemArray:
+        val.expr_type = NovaApeMem;
+        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        break;
+      case NovaCUMemArray:
+        val.expr_type = NovaCUMem;
+        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        break;
+      default:
+        throw std::invalid_argument("operator[] applied to a scalar");
+    }
+    return val;
   }
 };
 
