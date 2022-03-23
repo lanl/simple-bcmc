@@ -17,7 +17,29 @@ extern "C" {
 
 // Wrap a Nova expression in a C++ class.
 class NovaExpr {
+public:
+  // Specify the types of variable a NovaExpr object can represent.
+  typedef enum {
+        NovaInvalidType,  // Uninitialized
+        NovaRegister,     // Hard-wired APE or CU register number
+        NovaApeVar,
+        NovaCUVar,
+        NovaApeMem,
+        NovaCUMem,
+        NovaApeMemVector,
+        NovaCUMemVector,
+        NovaApeMemArray,
+        NovaCUMemArray,
+  } nova_t;
+
 private:
+  // Store information about the expression that we can't easily access from an
+  // scExpr without modifying Nova itself.
+  nova_t expr_type;   // NovaApeVar, NovaCUVar, etc.
+  bool is_approx;     // true=Approx; false=Int
+  size_t rows;        // Number of rows in a vector or array
+  size_t cols;        // Number of columns in an array
+
   // Invoke the correct {Ape,CU}{Var,Mem} function based on the current value
   // of expr_type and is_approx.
   void define_expr() {
@@ -35,6 +57,18 @@ private:
           break;
         case NovaCUMem:
           CUMem(expr, Approx);
+          break;
+        case NovaApeMemVector:
+          ApeMemVector(expr, Approx, int(rows));
+          break;
+        case NovaCUMemVector:
+          CUMemVector(expr, Approx, int(rows));
+          break;
+        case NovaApeMemArray:
+          ApeMemArray(expr, Approx, int(rows), int(cols));
+          break;
+        case NovaCUMemArray:
+          CUMemArray(expr, Approx, int(rows), int(cols));
           break;
         default:
           throw std::invalid_argument("invalid nova_t passed to NovaExpr");
@@ -54,32 +88,32 @@ private:
         case NovaCUMem:
           CUMem(expr, Int);
           break;
+        case NovaApeMemVector:
+          ApeMemVector(expr, Int, int(rows));
+          break;
+        case NovaCUMemVector:
+          CUMemVector(expr, Int, int(rows));
+          break;
+        case NovaApeMemArray:
+          ApeMemArray(expr, Int, int(rows), int(cols));
+          break;
+        case NovaCUMemArray:
+          CUMemArray(expr, Int, int(rows), int(cols));
+          break;
         default:
           throw std::invalid_argument("invalid nova_t passed to NovaExpr");
       }
   }
 
 public:
-  // Specify the types of variable a NovaExpr object can represent.
-  typedef enum {
-        NovaInvalidType,  // Uninitialized
-        NovaRegister,     // Hard-wired APE or CU register number
-        NovaApeVar,
-        NovaCUVar,
-        NovaApeMem,
-        NovaCUMem
-  } nova_t;
-
-  // Maintain a Nova expression and remember its type.
+  // Maintain a Nova expression.
   scExpr expr = 0;    // Declare(expr); without the "static"
-  nova_t expr_type;
-  bool is_approx;     // true=Approx; false=Int
 
   // "Declare" a variable without "defining" it.
-  NovaExpr() : expr_type(NovaInvalidType) { }
+  NovaExpr() : expr_type(NovaInvalidType), rows(0), cols(0) { }
 
   // Initialize a Nova Approx from a double.
-  NovaExpr(double d, nova_t type = NovaApeVar) {
+  NovaExpr(double d, nova_t type = NovaApeVar) : rows(0), cols(0) {
     expr_type = type;
     is_approx = true;
     define_expr();
@@ -87,7 +121,7 @@ public:
   }
 
   // Initialize a Nova Int from an int.
-  NovaExpr(int i, nova_t type = NovaApeVar) {
+  NovaExpr(int i, nova_t type = NovaApeVar) : rows(0), cols(0) {
     expr_type = type;
     is_approx = false;
     if (type == NovaRegister)
@@ -96,6 +130,26 @@ public:
       define_expr();
       Set(expr, IntConst(i));
     }
+  }
+
+  // Initialize an aggregate of Nova Approxes.  The double pointer is a dummy
+  // value that is used only for carrying type information.
+  NovaExpr(double* d, nova_t type = NovaApeMemVector, size_t rows=1, size_t cols=1) {
+    expr_type = type;
+    is_approx = true;
+    this->rows = rows;
+    this->cols = cols;
+    define_expr();
+  }
+
+  // Initialize an aggregate of Nova Ints.  The int pointer is a dummy
+  // value that is used only for carrying type information.
+  NovaExpr(int* i, nova_t type = NovaApeMemVector, size_t rows=1, size_t cols=1) {
+    expr_type = type;
+    is_approx = false;
+    this->rows = rows;
+    this->cols = cols;
+    define_expr();
   }
 
   // Return the address of a variable stored in either APE or CU memory.
@@ -109,6 +163,7 @@ public:
         throw std::domain_error("attempt to take the address of a non-memory variable");
         break;
     }
+    return 0;  // Should never get here.
   }
 
   NovaExpr& operator=(const NovaExpr& rhs) {
@@ -232,7 +287,7 @@ public:
 
 // Perform a for loop on the CU, taking the loop body as an argument.
 static void NovaCUForLoop(NovaExpr& var, int from, int to, int step,
-			  const std::function <void ()>& f)
+                          const std::function <void ()>& f)
 {
   CUFor(var.expr, IntConst(from), IntConst(to), IntConst(step));
   f();
