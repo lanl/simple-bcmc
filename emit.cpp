@@ -2,7 +2,6 @@
  * Use Nova to emit code for a simple billion-core Monte Carlo simulation.
  */
 
-#include <novapp.h>
 #include "simple-bcmc.h"
 
 // Perform a global Get operation.
@@ -80,18 +79,30 @@ void emit_nova_code(S1State& s1)
   assign_ape_coords(s1, ape_row, ape_col);
 
   // Temporary
+  TraceMessage("Row and column values\n");
   TraceOneRegisterAllApes(ape_row.expr);
   TraceOneRegisterAllApes(ape_col.expr);
 
   // Temporary
+  TraceMessage("Reduction to the CU\n");
   NovaExpr cu_var(0, NovaExpr::NovaCUVar);
   NovaExpr ape_var = ape_col;
   or_reduce_apes_to_cu(s1, cu_var, ape_var);
   TraceRegisterCU(cu_var.expr);
 
   // Temporary
+  TraceMessage("Integer to approx\n");
   NovaExpr some_int(0x4321);
   NovaExpr some_approx = int_to_approx01(some_int);
   TraceOneRegisterOneApe(some_int.expr, 0, 0);
   TraceOneRegisterOneApe(some_approx.expr, 0, 0);
+
+  // Temporary
+  TraceMessage("Cosines\n");
+  for (double a = 0.0; a <= 6.28318530718; a += 0.1) {
+    NovaExpr angle(a);
+    NovaExpr cos_val(cos_0_2pi(angle));
+    TraceOneRegisterOneApe(angle.expr, 0, 0);
+    TraceOneRegisterOneApe(cos_val.expr, 0, 0);
+  }
 }
