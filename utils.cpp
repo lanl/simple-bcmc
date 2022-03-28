@@ -3,7 +3,6 @@
  * Carlo simulation
  */
 
-#include <novapp.h>
 #include "simple-bcmc.h"
 
 // Convert an integer in [0, 65535] to an approx in [0, 1].

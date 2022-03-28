@@ -211,69 +211,30 @@ public:
     return *this;
   }
 
-  // ----- Basic arithmetic -----
+  // ----- Helper macros -----
 
-  friend NovaExpr operator+(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Add(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  NovaExpr& operator+=(const NovaExpr& rhs) {
-    Set(expr, Add(expr, rhs.expr));
-    return *this;
-  }
-
-  friend NovaExpr operator-(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Sub(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  NovaExpr& operator-=(const NovaExpr& rhs) {
-    Set(expr, Sub(expr, rhs.expr));
-    return *this;
-  }
-
-  friend NovaExpr operator*(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Mul(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  NovaExpr& operator*=(const NovaExpr& rhs) {
-    Set(expr, Mul(expr, rhs.expr));
-    return *this;
-  }
-
-  friend NovaExpr operator/(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Div(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  NovaExpr& operator/=(const NovaExpr& rhs) {
-    Set(expr, Div(expr, rhs.expr));
-    return *this;
-  }
-
-  // ----- Bit manipulation -----
-
-#define BITWISE_OP(OP, OP_EQ, NOVA)                             \
+  // A NOVA_OP defines both an arithmetic and an assignment operator
+  // that accept a NovaExpr on the right-hand side.
+#define NOVA_OP(OP, OP_EQ, NOVA)                                \
   friend NovaExpr operator OP(NovaExpr lhs,                     \
                               const NovaExpr& rhs) {            \
     lhs.expr = NOVA(lhs.expr, rhs.expr);                        \
     return lhs;                                                 \
   }                                                             \
                                                                 \
-  friend NovaExpr operator OP(NovaExpr lhs, const int rhs) {    \
-    lhs.expr = NOVA(lhs.expr, IntConst(rhs));                   \
-    return lhs;                                                 \
-  }                                                             \
-                                                                \
   NovaExpr& operator OP_EQ(const NovaExpr& rhs) {               \
     Set(expr, NOVA(expr, rhs.expr));                            \
     return *this;                                               \
+  }
+
+  // An INTEGER_OP defines both an arithmetic and an assignment operator
+  // that accept either a NovaExpr or an integer on the right-hand side.
+#define INTEGER_OP(OP, OP_EQ, NOVA)                             \
+  NOVA_OP(OP, OP_EQ, NOVA)                                      \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr lhs, const int rhs) {    \
+    lhs.expr = NOVA(lhs.expr, IntConst(rhs));                   \
+    return lhs;                                                 \
   }                                                             \
                                                                 \
   NovaExpr& operator OP_EQ(const int rhs) {                     \
@@ -281,11 +242,61 @@ public:
     return *this;                                               \
   }
 
-  BITWISE_OP(|, |=, Or)
-  BITWISE_OP(&, &=, And)
-  BITWISE_OP(^, ^=, Xor)
-  BITWISE_OP(<<, <<=, Asl)
-  BITWISE_OP(>>, >>=, Asr)
+  // An APPROX_OP defines both an arithmetic and an assignment operator
+  // that accept either a NovaExpr or a double on the right-hand side.
+#define APPROX_OP(OP, OP_EQ, NOVA)                              \
+  NOVA_OP(OP, OP_EQ, NOVA)                                      \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr lhs, const double rhs) { \
+    lhs.expr = NOVA(lhs.expr, AConst(rhs));                     \
+    return lhs;                                                 \
+  }                                                             \
+                                                                \
+  NovaExpr& operator OP_EQ(const double rhs) {                  \
+    Set(expr, NOVA(expr, AConst(rhs)));                         \
+    return *this;                                               \
+  }
+
+  // An GENERAL_OP defines both an arithmetic and an assignment operator
+  // that accept a NovaExpr, an integer, or a double on the right-hand
+  // side.
+#define GENERAL_OP(OP, OP_EQ, NOVA)                             \
+  NOVA_OP(OP, OP_EQ, NOVA)                                      \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr lhs, const int rhs) {    \
+    lhs.expr = NOVA(lhs.expr, IntConst(rhs));                   \
+    return lhs;                                                 \
+  }                                                             \
+                                                                \
+  NovaExpr& operator OP_EQ(const int rhs) {                     \
+    Set(expr, NOVA(expr, IntConst(rhs)));                       \
+    return *this;                                               \
+  }                                                             \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr lhs, const double rhs) { \
+    lhs.expr = NOVA(lhs.expr, AConst(rhs));                     \
+    return lhs;                                                 \
+  }                                                             \
+                                                                \
+  NovaExpr& operator OP_EQ(const double rhs) {                  \
+    Set(expr, NOVA(expr, AConst(rhs)));                         \
+    return *this;                                               \
+  }
+
+  // ----- Basic arithmetic -----
+
+  GENERAL_OP(+, +=, Add)
+  GENERAL_OP(-, -=, Sub)
+  APPROX_OP(*, *=, Mul)
+  APPROX_OP(/, /=, Div)
+
+  // ----- Bit manipulation -----
+
+  INTEGER_OP(|, |=, Or)
+  INTEGER_OP(&, &=, And)
+  INTEGER_OP(^, ^=, Xor)
+  INTEGER_OP(<<, <<=, Asl)
+  INTEGER_OP(>>, >>=, Asr)
 
   // ----- Prefix and postfix operators -----
 
