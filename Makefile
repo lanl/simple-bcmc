@@ -4,7 +4,11 @@ CXXFLAGS = -g -O0 -Wno-write-strings -std=c++17
 LDFLAGS = -L$(SCROOT)
 LIBS = -lS1
 
-SOURCES = main.cpp emit.cpp threefry.cpp
+SOURCES = \
+	main.cpp \
+	emit.cpp \
+	threefry.cpp \
+	utils.cpp
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
 all: simple-bcmc

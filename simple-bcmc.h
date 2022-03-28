@@ -6,6 +6,8 @@
 #ifndef _SIMPLE_BCMC_H
 #define _SIMPLE_BCMC_H
 
+#include "novapp.h"
+
 // Encapsulate machine state.
 struct S1State {
   bool emulated;    // true=emulated; false=real hardware
@@ -21,5 +23,7 @@ struct S1State {
   {
   }
 };
+
+extern NovaExpr int_to_approx01(const NovaExpr& i_val);
 
 #endif

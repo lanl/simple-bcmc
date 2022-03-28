@@ -2,3 +2,4 @@ emit.o
 main.o
 simple-bcmc
 threefry.o
+utils.o

@@ -88,4 +88,10 @@ void emit_nova_code(S1State& s1)
   NovaExpr ape_var = ape_col;
   or_reduce_apes_to_cu(s1, cu_var, ape_var);
   TraceRegisterCU(cu_var.expr);
+
+  // Temporary
+  NovaExpr some_int(0x4321);
+  NovaExpr some_approx = int_to_approx01(some_int);
+  TraceOneRegisterOneApe(some_int.expr, 0, 0);
+  TraceOneRegisterOneApe(some_approx.expr, 0, 0);
 }

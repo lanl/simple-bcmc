@@ -259,80 +259,33 @@ public:
 
   // ----- Bit manipulation -----
 
-  friend NovaExpr operator|(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Or(lhs.expr, rhs.expr);
-    return lhs;
+#define BITWISE_OP(OP, OP_EQ, NOVA)                             \
+  friend NovaExpr operator OP(NovaExpr lhs,                     \
+                              const NovaExpr& rhs) {            \
+    lhs.expr = NOVA(lhs.expr, rhs.expr);                        \
+    return lhs;                                                 \
+  }                                                             \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr lhs, const int rhs) {    \
+    lhs.expr = NOVA(lhs.expr, IntConst(rhs));                   \
+    return lhs;                                                 \
+  }                                                             \
+                                                                \
+  NovaExpr& operator OP_EQ(const NovaExpr& rhs) {               \
+    Set(expr, NOVA(expr, rhs.expr));                            \
+    return *this;                                               \
+  }                                                             \
+                                                                \
+  NovaExpr& operator OP_EQ(const int rhs) {                     \
+    Set(expr, NOVA(expr, IntConst(rhs)));                       \
+    return *this;                                               \
   }
 
-  NovaExpr& operator|=(const NovaExpr& rhs) {
-    Set(expr, Or(expr, rhs.expr));
-    return *this;
-  }
-
-  friend NovaExpr operator&(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = And(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  NovaExpr& operator&=(const NovaExpr& rhs) {
-    Set(expr, And(expr, rhs.expr));
-    return *this;
-  }
-
-  friend NovaExpr operator^(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Xor(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  NovaExpr& operator^=(const NovaExpr& rhs) {
-    Set(expr, Xor(expr, rhs.expr));
-    return *this;
-  }
-
-  friend NovaExpr operator<<(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Asl(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  friend NovaExpr operator<<(NovaExpr lhs, const int rhs) {
-    lhs.expr = Asl(lhs.expr, IntConst(rhs));
-    return lhs;
-  }
-
-  NovaExpr& operator<<=(const NovaExpr& rhs) {
-    Set(expr, Asl(expr, rhs.expr));
-    return *this;
-  }
-
-  NovaExpr& operator<<=(const int rhs) {
-    Set(expr, Asl(expr, IntConst(rhs)));
-    return *this;
-  }
-
-  friend NovaExpr operator>>(NovaExpr lhs,
-                            const NovaExpr& rhs) {
-    lhs.expr = Asr(lhs.expr, rhs.expr);
-    return lhs;
-  }
-
-  friend NovaExpr operator>>(NovaExpr lhs, const int rhs) {
-    lhs.expr = Asr(lhs.expr, IntConst(rhs));
-    return lhs;
-  }
-
-  NovaExpr& operator>>=(const NovaExpr& rhs) {
-    Set(expr, Asr(expr, rhs.expr));
-    return *this;
-  }
-
-  NovaExpr& operator>>=(const int rhs) {
-    Set(expr, Asr(expr, IntConst(rhs)));
-    return *this;
-  }
+  BITWISE_OP(|, |=, Or)
+  BITWISE_OP(&, &=, And)
+  BITWISE_OP(^, ^=, Xor)
+  BITWISE_OP(<<, <<=, Asl)
+  BITWISE_OP(>>, >>=, Asr)
 
   // ----- Prefix and postfix operators -----
 

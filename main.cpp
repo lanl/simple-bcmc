@@ -9,11 +9,6 @@
 #include <getopt.h>
 #include "simple-bcmc.h"
 
-extern "C" {
-#include "scAcceleratorAPI.h"
-#include "scNova.h"
-}
-
 extern void emit_nova_code(S1State&);
 
 // Parse the command line into an S1State.
