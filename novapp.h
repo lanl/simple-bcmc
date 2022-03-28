@@ -109,6 +109,8 @@ public:
   // Maintain a Nova expression.
   scExpr expr = 0;    // Declare(expr); without the "static"
 
+  // ----- Constructors -----
+
   // "Declare" a variable without "defining" it.
   NovaExpr() : expr_type(NovaInvalidType), rows(0), cols(0) { }
 
@@ -152,6 +154,8 @@ public:
     define_expr();
   }
 
+  // ----- Address operators -----
+
   // Return the address of a variable stored in either APE or CU memory.
   int operator&() {
     switch (expr_type) {
@@ -165,6 +169,8 @@ public:
     }
     return 0;  // Should never get here.
   }
+
+  // ----- Assignment operators -----
 
   // Assign one NovaExpr to another using Nova's Set macro.
   NovaExpr& operator=(const NovaExpr& rhs) {
