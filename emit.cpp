@@ -78,7 +78,7 @@ void emit_nova_code(S1State& s1)
   NovaExpr ape_row, ape_col;
   assign_ape_coords(s1, ape_row, ape_col);
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Row and column values\n");
   TraceOneRegisterAllApes(ape_row.expr);
@@ -115,7 +115,7 @@ void emit_nova_code(S1State& s1)
   }
 #endif
 
-#ifdef XYZZY
+#ifndef XYZZY
   // Temporary
   TraceMessage("Threefry\n");
   int dummy_int;  // Hack needed to declare a vector.
@@ -128,6 +128,6 @@ void emit_nova_code(S1State& s1)
   for (int i = 0; i < 8; ++i)
     counter_3fry[i] = 0;
   threefry4x32();
-  TraceOneRegisterOneApe(key_3fry[0].expr, 0, 0);
+  TraceOneRegisterOneApe(random_3fry[0].expr, 0, 0);
 #endif
 }
