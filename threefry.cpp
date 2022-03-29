@@ -9,6 +9,11 @@
 NovaExpr counter_3fry;  // Input: Loop counter
 NovaExpr key_3fry;      // Input: Key (e.g., APE ID)
 NovaExpr random_3fry;   // Output: Random numbers
+
+// Most of this file represents helper functions for Threefry.
+namespace {
+
+// Scratch data are also four 32-bit numbers stored as eight Ints.
 NovaExpr scratch_3fry;  // Internal: Scratch space
 
 // Define the list of Threefry 32x4 rotation constants.
@@ -122,13 +127,15 @@ void mix(int a, int b, int ridx)
   random_3fry[b*2 + 1] ^= random_3fry[a*2 + 1];
 }
 
-/* Use counter_3fry and key_3fry to generate random numbers random_3fry. */
+} // anonymous namespace
+
+// Use counter_3fry and key_3fry to generate random numbers random_3fry.
 void threefry4x32()
 {
-  int r;  /* Round */
+  int r;  // Round
   int i;
 
-  /* Initialize both the internal and output state. */
+  // Initialize both the internal and output state.
   int dummy_int;  // Hack needed to declare a vector.
   random_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
   scratch_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 10);
@@ -149,11 +156,11 @@ void threefry4x32()
 
   // Perform 20 rounds of mixing.
   for (r = 0; r < 20; r++) {
-    /* Inject */
+    // Inject
     if (r%4 == 0 && r > 0)
       inject_key(r/4);
 
-    /* Mix */
+    // Mix
     if (r%2 == 0) {
       mix(0, 1, (2*r)%16);
       mix(2, 3, (2*r + 1)%16);

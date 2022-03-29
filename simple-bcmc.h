@@ -24,8 +24,13 @@ struct S1State {
   }
 };
 
+extern NovaExpr counter_3fry;  // Input: Loop counter
+extern NovaExpr key_3fry;      // Input: Key (e.g., APE ID)
+extern NovaExpr random_3fry;   // Output: Random numbers
+
 extern NovaExpr int_to_approx01(const NovaExpr& i_val);
 extern NovaExpr cos_0_2pi(const NovaExpr& x);
 extern NovaExpr sin_0_2pi(const NovaExpr& x);
+extern void threefry4x32();
 
 #endif

@@ -78,6 +78,7 @@ void emit_nova_code(S1State& s1)
   NovaExpr ape_row, ape_col;
   assign_ape_coords(s1, ape_row, ape_col);
 
+#ifdef XYZZY
   // Temporary
   TraceMessage("Row and column values\n");
   TraceOneRegisterAllApes(ape_row.expr);
@@ -105,4 +106,5 @@ void emit_nova_code(S1State& s1)
     TraceOneRegisterOneApe(angle.expr, 0, 0);
     TraceOneRegisterOneApe(cos_val.expr, 0, 0);
   }
+#endif
 }
