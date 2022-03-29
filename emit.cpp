@@ -5,7 +5,7 @@
 #include "simple-bcmc.h"
 
 // Perform a global Get operation.
-void global_get(NovaExpr dest, NovaExpr src, int dir)
+void global_get(NovaExpr& dest, NovaExpr src, int dir)
 {
   // Get 16 bits, one at a time.
   eApeC(apeGetGStart, _, _, dir);
@@ -92,13 +92,18 @@ void emit_nova_code(S1State& s1)
   NovaExpr ape_var = ape_col;
   or_reduce_apes_to_cu(s1, cu_var, ape_var);
   TraceRegisterCU(cu_var.expr);
+#endif
 
+#ifdef XYZZY
   // Temporary
   TraceMessage("Integer to approx\n");
   NovaExpr some_int(0x4321);
   NovaExpr some_approx = int_to_approx01(some_int);
   TraceOneRegisterOneApe(some_int.expr, 0, 0);
   TraceOneRegisterOneApe(some_approx.expr, 0, 0);
+#endif
+
+#ifdef XYZZY
 
   // Temporary
   TraceMessage("Cosines\n");
@@ -110,6 +115,7 @@ void emit_nova_code(S1State& s1)
   }
 #endif
 
+#ifdef XYZZY
   // Temporary
   TraceMessage("Threefry\n");
   int dummy_int;  // Hack needed to declare a vector.
@@ -123,4 +129,5 @@ void emit_nova_code(S1State& s1)
     counter_3fry[i] = 0;
   threefry4x32();
   TraceOneRegisterOneApe(key_3fry[0].expr, 0, 0);
+#endif
 }
