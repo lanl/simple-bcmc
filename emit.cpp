@@ -78,12 +78,14 @@ void emit_nova_code(S1State& s1)
   NovaExpr ape_row, ape_col;
   assign_ape_coords(s1, ape_row, ape_col);
 
-#ifdef XYZZY
+#ifndef XYZZY
   // Temporary
   TraceMessage("Row and column values\n");
   TraceOneRegisterAllApes(ape_row.expr);
   TraceOneRegisterAllApes(ape_col.expr);
+#endif
 
+#ifdef XYZZY
   // Temporary
   TraceMessage("Reduction to the CU\n");
   NovaExpr cu_var(0, NovaExpr::NovaCUVar);
@@ -107,4 +109,18 @@ void emit_nova_code(S1State& s1)
     TraceOneRegisterOneApe(cos_val.expr, 0, 0);
   }
 #endif
+
+  // Temporary
+  TraceMessage("Threefry\n");
+  int dummy_int;  // Hack needed to declare a vector.
+  key_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  key_3fry[0] = ape_row;
+  key_3fry[1] = ape_col;
+  for (int i = 2; i < 8; ++i)
+    key_3fry[i] = 0;
+  counter_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  for (int i = 0; i < 8; ++i)
+    counter_3fry[i] = 0;
+  threefry4x32();
+  TraceOneRegisterOneApe(key_3fry[0].expr, 0, 0);
 }

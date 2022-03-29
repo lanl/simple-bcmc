@@ -187,7 +187,21 @@ public:
     expr_type = rhs.expr_type;
     is_approx = rhs.is_approx;
     define_expr();
-    Set(expr, rhs.expr);
+    switch (expr_type) {
+      case NovaApeMemVector:
+      case NovaCUMemVector:
+      case NovaApeMemArray:
+      case NovaCUMemArray:
+        // Store only a point for vector/array expressions.  (Set doesn't
+        // work here.)
+        expr = rhs.expr;
+        break;
+
+      default:
+        // Copy scalar expressions.
+        Set(expr, rhs.expr);
+        break;
+    }
     return *this;
   }
 
@@ -347,11 +361,11 @@ public:
     switch (expr_type) {
       case NovaApeMemVector:
         val.expr_type = NovaApeMem;
-        val.expr = IndexVector(expr, idx);
+        val.expr = IndexVector(expr, IntConst(idx));
         break;
       case NovaCUMemVector:
         val.expr_type = NovaCUMem;
-        val.expr = IndexVector(expr, idx);
+        val.expr = IndexVector(expr, IntConst(idx));
         break;
       case NovaApeMemArray:
         val.expr_type = NovaApeMem;
