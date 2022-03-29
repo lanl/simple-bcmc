@@ -72,9 +72,9 @@ void Add32Bits(scExpr sum_hi, scExpr sum_lo,
     Add32Bits(OUT[2*(OUT_IDX)].expr,                    \
               OUT[2*(OUT_IDX) + 1].expr,                \
               IN1[2*(IN1_IDX)].expr,                    \
-              IN1[2*(IN1_IDX + 1)].expr,                \
+              IN1[2*(IN1_IDX) + 1].expr,                \
               IN2[2*(IN2_IDX)].expr,                    \
-              IN2[2*(IN2_IDX + 1)].expr);               \
+              IN2[2*(IN2_IDX) + 1].expr);               \
   }                                                     \
   while (0)
 
@@ -132,30 +132,31 @@ void mix(int a, int b, int ridx)
 // Use counter_3fry and key_3fry to generate random numbers random_3fry.
 void threefry4x32()
 {
-  int r;  // Round
-  int i;
-
   // Initialize both the internal and output state.
   int dummy_int;  // Hack needed to declare a vector.
   random_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
   scratch_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 10);
   scratch_3fry[8] = 0x1BD1;
   scratch_3fry[9] = 0x1BDA;
-  for (i = 0; i < 4; i++) {
-    NovaExpr hi(i*2);
-    NovaExpr lo(i*2 + 1);
-    scratch_3fry[hi] = key_3fry[hi];
-    scratch_3fry[lo] = key_3fry[lo];
-    random_3fry[hi] = counter_3fry[hi];
-    random_3fry[lo] = counter_3fry[lo];
-    scratch_3fry[8] ^= key_3fry[hi];
-    scratch_3fry[9] ^= key_3fry[lo];
-  }
-  for (i = 0; i < 4; i++)
+  NovaExpr cidx(-1, NovaExpr::NovaCUVar);   // Index into 32-bit data (CU)
+  NovaExpr hi(0), lo(0);                    // Indices into 16-bit data (APEs)
+  NovaExpr ci(0, NovaExpr::NovaCUVar);      // CU loop variable
+  NovaCUForLoop(ci, 0, 3, 1,
+                [&]() {
+                  hi = ++cidx;
+                  lo = ++cidx;
+                  scratch_3fry[hi] = key_3fry[hi];
+                  scratch_3fry[lo] = key_3fry[lo];
+                  random_3fry[hi] = counter_3fry[hi];
+                  random_3fry[lo] = counter_3fry[lo];
+                  scratch_3fry[8] ^= key_3fry[hi];
+                  scratch_3fry[9] ^= key_3fry[lo];
+                });
+  for (int i = 0; i < 4; ++i)
     ADD32(random_3fry, i, random_3fry, i, scratch_3fry, i);
 
   // Perform 20 rounds of mixing.
-  for (r = 0; r < 20; r++) {
+  for (int r = 0; r < 20; ++r) {
     // Inject
     if (r%4 == 0 && r > 0)
       inject_key(r/4);
