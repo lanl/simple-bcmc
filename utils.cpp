@@ -4,6 +4,9 @@
  */
 
 #include "simple-bcmc.h"
+#include <cmath>
+
+#define TWO_PI (2*M_PI)
 
 // Convert an integer in [0, 65535] to an approx in [0, 1].
 NovaExpr int_to_approx01(const NovaExpr& i_val)
@@ -20,10 +23,10 @@ NovaExpr int_to_approx01(const NovaExpr& i_val)
 }
 
 // Approximate cos(x) on [0, 2*pi] using 5 Chebyshev polynomials.
-NovaExpr cos_0_2pi(NovaExpr x)
+NovaExpr cos_0_2pi(const NovaExpr& x)
 {
   // Scale num from [0, 2*pi] to [-1, 1].
-  NovaExpr num((x*2.0 - 2*M_PI)/2*M_PI);
+  NovaExpr num((x*2.0 - TWO_PI)/TWO_PI);
 
   // Instantiate the Chebyshev polynomials.
   NovaExpr num2(num*2.0);
@@ -43,10 +46,10 @@ NovaExpr cos_0_2pi(NovaExpr x)
 }
 
 // Approximate sin(x) on [0, 2*pi] using 6 Chebyshev polynomials.
-NovaExpr sin_0_2pi(NovaExpr x)
+NovaExpr sin_0_2pi(const NovaExpr& x)
 {
-  // Scale num from [0, 6.2832] to [-1, 1].
-  NovaExpr num((x*2.0 - 2*M_PI)/2*M_PI);
+  // Scale num from [0, 2*pi] to [-1, 1].
+  NovaExpr num((x*2.0 - TWO_PI)/TWO_PI);
 
   // Instantiate the Chebyshev polynomials.
   NovaExpr num2(num*2.0);

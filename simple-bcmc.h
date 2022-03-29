@@ -25,7 +25,7 @@ struct S1State {
 };
 
 extern NovaExpr int_to_approx01(const NovaExpr& i_val);
-extern NovaExpr cos_0_2pi(NovaExpr x);
-extern NovaExpr sin_0_2pi(NovaExpr x);
+extern NovaExpr cos_0_2pi(const NovaExpr& x);
+extern NovaExpr sin_0_2pi(const NovaExpr& x);
 
 #endif
