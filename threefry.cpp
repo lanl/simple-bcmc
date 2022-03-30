@@ -8,12 +8,12 @@
 // Each of the following represent four 32-bit numbers stored as eight Ints.
 NovaExpr counter_3fry;  // Input: Loop counter
 NovaExpr key_3fry;      // Input: Key (e.g., APE ID)
-NovaExpr random_3fry;   // Output: Random numbers
 
 // Most of this file represents helper functions for Threefry.
 namespace {
 
-// Scratch data are also four 32-bit numbers stored as eight Ints.
+// The following private data are also four 32-bit numbers stored as eight Ints.
+NovaExpr random_3fry;   // Output: Random numbers
 NovaExpr scratch_3fry;  // Internal: Scratch space
 
 // Define the list of Threefry 32x4 rotation constants.
@@ -172,4 +172,20 @@ void threefry4x32()
     }
   }
   inject_key(20/4);
+}
+
+// Return the next random number in random_3fry, invoking threefry4x32()
+// again if we've run out of random numbers.
+NovaExpr get_random_int()
+{
+  static size_t r_idx = 8;  // Index into random_3fry
+
+  // Generate 8 more random numbers if we've exhausted the current 8.
+  if (r_idx >= 8) {
+    threefry4x32();
+    r_idx = 0;
+  }
+
+  // Return the current random number.
+  return random_3fry[r_idx++];
 }

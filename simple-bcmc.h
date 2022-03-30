@@ -8,6 +8,8 @@
 
 #include "novapp.h"
 
+#define TWO_PI (2*M_PI)
+
 // Encapsulate machine state.
 struct S1State {
   bool emulated;    // true=emulated; false=real hardware
@@ -18,20 +20,19 @@ struct S1State {
   int ape_rows;     // APE rows per chip
 
   S1State() : emulated(false), trace_flags(0),
-	      chip_cols(1), chip_rows(1),
-	      ape_cols(44), ape_rows(48)
+              chip_cols(1), chip_rows(1),
+              ape_cols(44), ape_rows(48)
   {
   }
 };
 
-extern NovaExpr counter_3fry;  // Input: Loop counter
-extern NovaExpr key_3fry;      // Input: Key (e.g., APE ID)
-extern NovaExpr random_3fry;   // Output: Random numbers
+extern NovaExpr counter_3fry;  // RNG input: Loop counter
+extern NovaExpr key_3fry;      // RNG input: Key (e.g., APE ID)
 
 extern void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col);
 extern NovaExpr int_to_approx01(const NovaExpr& i_val);
 extern NovaExpr cos_0_2pi(const NovaExpr& x);
 extern NovaExpr sin_0_2pi(const NovaExpr& x);
-extern void threefry4x32();
+extern NovaExpr get_random_int();
 
 #endif

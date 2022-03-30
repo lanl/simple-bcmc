@@ -124,6 +124,15 @@ public:
     Set(expr, other.expr);
   }
 
+  // Move a NovaExpr to another NovaExpr.
+  NovaExpr(const NovaExpr&& other) noexcept {
+    expr_type = other.expr_type;
+    is_approx = other.is_approx;
+    rows = other.rows;
+    cols = other.cols;
+    expr = other.expr;
+  }
+
   // Initialize a Nova Approx from a double.
   NovaExpr(double d, nova_t type = NovaApeVar) : rows(0), cols(0) {
     expr_type = type;
@@ -405,6 +414,13 @@ public:
         throw std::invalid_argument("operator[] applied to a scalar");
     }
     return val;
+  }
+
+  // ----- Square root -----
+  friend NovaExpr sqrt(const NovaExpr& x) {
+    NovaExpr s(x);
+    Set(s.expr, Sqrt(x.expr));
+    return s;
   }
 };
 

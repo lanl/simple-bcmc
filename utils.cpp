@@ -6,8 +6,6 @@
 #include "simple-bcmc.h"
 #include <cmath>
 
-#define TWO_PI (2*M_PI)
-
 // Perform a global Get operation.
 void global_get(NovaExpr& dest, NovaExpr src, int dir)
 {
