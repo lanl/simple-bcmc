@@ -92,12 +92,26 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   TraceOneRegisterOneApe(x.expr, 0, 0);
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("get_angle()\n");
   NovaExpr angle[2];
   get_angle(angle);
   TraceOneRegisterOneApe(angle[0].expr, 0, 0);
   TraceOneRegisterOneApe(angle[1].expr, 0, 0);
+#endif
+
+#ifndef XYZZY
+  // Temporary
+  TraceMessage("Arrays\n");
+  NovaExpr my_array(0, NovaExpr::NovaApeMemArray, 2, 2);
+  my_array[0][0] = ape_row;
+  my_array[0][1] = 10;
+  my_array[1][0] = 20;
+  my_array[1][1] = ape_col;
+  TraceOneRegisterOneApe(my_array[0][0].expr, 0, 0);
+  TraceOneRegisterOneApe(my_array[0][1].expr, 0, 0);
+  TraceOneRegisterOneApe(my_array[1][0].expr, 0, 0);
+  TraceOneRegisterOneApe(my_array[1][1].expr, 0, 0);
 #endif
 }

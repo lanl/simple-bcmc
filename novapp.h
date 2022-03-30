@@ -30,6 +30,8 @@ public:
         NovaCUMemVector,
         NovaApeMemArray,
         NovaCUMemArray,
+        NovaApeMemArrayPartial,  // Internal use only
+        NovaCUMemArrayPartial    // Internal use only
   } nova_t;
 
 private:
@@ -39,6 +41,7 @@ private:
   bool is_approx;     // true=Approx; false=Int
   size_t rows;        // Number of rows in a vector or array
   size_t cols;        // Number of columns in an array
+  scExpr row_idx;     // Row index in operator[][] array accesses
 
   // Invoke the correct {Ape,CU}{Var,Mem} function based on the current value
   // of expr_type and is_approx.
@@ -393,12 +396,22 @@ public:
         val.expr = IndexVector(expr, IntConst(idx));
         break;
       case NovaApeMemArray:
-        val.expr_type = NovaApeVar;
-        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        val.expr_type = NovaApeMemArrayPartial;
+	val.expr = expr;
+        val.row_idx = IntConst(idx);
         break;
       case NovaCUMemArray:
         val.expr_type = NovaCUVar;
-        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+	val.expr = expr;
+        val.row_idx = IntConst(idx);
+        break;
+      case NovaApeMemArrayPartial:
+        val.expr_type = NovaApeVar;
+        val.expr = IndexArray(expr, row_idx, IntConst(idx));
+        break;
+      case NovaCUMemArrayPartial:
+        val.expr_type = NovaCUVar;
+        val.expr = IndexArray(expr, row_idx, IntConst(idx));
         break;
       default:
         throw std::invalid_argument("operator[] applied to a scalar");
@@ -419,12 +432,20 @@ public:
         val.expr = IndexVector(expr, idx.expr);
         break;
       case NovaApeMemArray:
-        val.expr_type = NovaApeVar;
-        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        val.expr_type = NovaApeMemArrayPartial;
+        val.row_idx = idx.expr;
         break;
       case NovaCUMemArray:
+        val.expr_type = NovaCUMemArrayPartial;
+        val.row_idx = idx.expr;
+        break;
+      case NovaApeMemArrayPartial:
+        val.expr_type = NovaApeVar;
+        val.expr = IndexArray(expr, row_idx, idx.expr);
+        break;
+      case NovaCUMemArrayPartial:
         val.expr_type = NovaCUVar;
-        throw std::invalid_argument("operator[] is not yet implemented for arrays");
+        val.expr = IndexArray(expr, row_idx, idx.expr);
         break;
       default:
         throw std::invalid_argument("operator[] applied to a scalar");
