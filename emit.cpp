@@ -104,7 +104,6 @@ void emit_nova_code(S1State& s1)
 #endif
 
 #ifdef XYZZY
-
   // Temporary
   TraceMessage("Cosines\n");
   for (double a = 0.0; a <= 6.28318530718; a += 0.1) {
@@ -129,5 +128,6 @@ void emit_nova_code(S1State& s1)
     counter_3fry[i] = 0;
   threefry4x32();
   TraceOneRegisterOneApe(random_3fry[0].expr, 0, 0);
+  TraceOneRegisterOneApe(random_3fry[1].expr, 0, 0);
 #endif
 }

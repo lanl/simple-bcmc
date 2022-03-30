@@ -116,8 +116,8 @@ void mix(int a, int b, int ridx)
     hi = random_3fry[b*2]<<rot;
     lo = random_3fry[b*2 + 1]<<rot;
     NovaExpr mask((1<<rot) - 1);
-    hi |= (random_3fry[b*2 + 1]<<(16 - rot)) & mask;
-    lo |= (random_3fry[b*2]<<(16 - rot)) & mask;
+    hi |= (random_3fry[b*2 + 1]>>(16 - rot)) & mask;
+    lo |= (random_3fry[b*2]>>(16 - rot)) & mask;
     random_3fry[b*2] = hi;
     random_3fry[b*2 + 1] = lo;
   }
