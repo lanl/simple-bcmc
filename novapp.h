@@ -369,19 +369,19 @@ public:
     val.is_approx = is_approx;
     switch (expr_type) {
       case NovaApeMemVector:
-        val.expr_type = NovaApeMem;
+        val.expr_type = NovaApeVar;
         val.expr = IndexVector(expr, IntConst(idx));
         break;
       case NovaCUMemVector:
-        val.expr_type = NovaCUMem;
+        val.expr_type = NovaCUVar;
         val.expr = IndexVector(expr, IntConst(idx));
         break;
       case NovaApeMemArray:
-        val.expr_type = NovaApeMem;
+        val.expr_type = NovaApeVar;
         throw std::invalid_argument("operator[] is not yet implemented for arrays");
         break;
       case NovaCUMemArray:
-        val.expr_type = NovaCUMem;
+        val.expr_type = NovaCUVar;
         throw std::invalid_argument("operator[] is not yet implemented for arrays");
         break;
       default:
@@ -395,19 +395,19 @@ public:
     val.is_approx = is_approx;
     switch (expr_type) {
       case NovaApeMemVector:
-        val.expr_type = NovaApeMem;
+        val.expr_type = NovaApeVar;
         val.expr = IndexVector(expr, idx.expr);
         break;
       case NovaCUMemVector:
-        val.expr_type = NovaCUMem;
+        val.expr_type = NovaCUVar;
         val.expr = IndexVector(expr, idx.expr);
         break;
       case NovaApeMemArray:
-        val.expr_type = NovaApeMem;
+        val.expr_type = NovaApeVar;
         throw std::invalid_argument("operator[] is not yet implemented for arrays");
         break;
       case NovaCUMemArray:
-        val.expr_type = NovaCUMem;
+        val.expr_type = NovaCUVar;
         throw std::invalid_argument("operator[] is not yet implemented for arrays");
         break;
       default:
