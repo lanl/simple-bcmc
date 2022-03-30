@@ -5,13 +5,13 @@
 #include "simple-bcmc.h"
 
 // Sample a simple 2-D angle.  (The third dimension is not used for now.)
-void get_angle(std::size_t r_idx, NovaExpr& x_angle, NovaExpr& y_angle)
+void get_angle(NovaExpr angle[2])
 {
   NovaExpr phi(int_to_approx01(get_random_int())*TWO_PI);
   NovaExpr mu(int_to_approx01(get_random_int())*2.0 - 1.0);
   NovaExpr eta(sqrt(NovaExpr(1.0) - mu*mu));
-  x_angle = eta*cos_0_2pi(phi);
-  y_angle = eta*sin_0_2pi(phi);
+  angle[0] = eta*cos_0_2pi(phi);
+  angle[1] = eta*sin_0_2pi(phi);
 }
 
 // Emit the entire S1 program to a low-level kernel.
@@ -72,7 +72,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   }
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Threefry\n");
   for (int i = 0; i < 16; ++i) {
@@ -90,5 +90,14 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   x = 2.0;
   x = sqrt(x);
   TraceOneRegisterOneApe(x.expr, 0, 0);
+#endif
+
+#ifndef XYZZY
+  // Temporary
+  TraceMessage("get_angle()\n");
+  NovaExpr angle[2];
+  get_angle(angle);
+  TraceOneRegisterOneApe(angle[0].expr, 0, 0);
+  TraceOneRegisterOneApe(angle[1].expr, 0, 0);
 #endif
 }
