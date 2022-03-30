@@ -15,7 +15,7 @@ void get_angle(std::size_t r_idx, NovaExpr& x_angle, NovaExpr& y_angle)
 }
 
 // Emit the entire S1 program to a low-level kernel.
-void emit_nova_code(S1State& s1)
+void emit_nova_code(S1State& s1, unsigned long long seed)
 {
   // Tell each APE its row and column.
   NovaExpr ape_row, ape_col;
@@ -31,10 +31,10 @@ void emit_nova_code(S1State& s1)
   key_3fry = NovaExpr(0, NovaExpr::NovaApeMemVector, 8);
   key_3fry[0] = ape_row;
   key_3fry[1] = ape_col;
-  NovaCUForLoop(ci, 2, 7, 1,
-                [&]() {
-                  key_3fry[ci] = 0;
-                });
+  for (int i = 2; i < 7; ++i) {
+    key_3fry[i] = int(seed&0xFFFF);
+    seed >>= 16;
+  }
 
 #ifdef XYZZY
   // Temporary

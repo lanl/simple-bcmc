@@ -29,6 +29,7 @@ struct S1State {
 extern NovaExpr counter_3fry;  // RNG input: Loop counter
 extern NovaExpr key_3fry;      // RNG input: Key (e.g., APE ID)
 
+extern void emit_nova_code(S1State&, unsigned long long seed);
 extern void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col);
 extern NovaExpr int_to_approx01(const NovaExpr& i_val);
 extern NovaExpr cos_0_2pi(const NovaExpr& x);
