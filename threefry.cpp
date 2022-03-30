@@ -181,9 +181,8 @@ NovaExpr get_random_int()
 
   // On first invocation, initialize the output vector and the scratch vector.
   if (!random_3fry.has_value()) {
-    int dummy_int;  // Hack needed to declare a vector
-    scratch_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 10);
-    random_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+    scratch_3fry = NovaExpr(0, NovaExpr::NovaApeMemVector, 10);
+    random_3fry = NovaExpr(0, NovaExpr::NovaApeMemVector, 8);
   }
 
   // Generate 8 more random numbers if we've exhausted the current 8.

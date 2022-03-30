@@ -136,44 +136,57 @@ public:
     expr = other.expr;
   }
 
-  // Initialize a Nova Approx from a double.
-  NovaExpr(double d, nova_t type = NovaApeVar) : rows(0), cols(0) {
+  // Initialize a Nova Approx from a double.  The double is currently
+  // ignored for vector and array types.
+  NovaExpr(double d, nova_t type = NovaApeVar, size_t rows=1, size_t cols=1) {
     expr_type = type;
     is_approx = true;
+    this->rows = rows;
+    this->cols = cols;
     define_expr();
-    Set(expr, AConst(d));
-  }
+    switch (expr_type) {
+      case NovaApeMemVector:
+      case NovaCUMemVector:
+      case NovaApeMemArray:
+      case NovaCUMemArray:
+        // No data initialization for vectors or arrays.
+        break;
 
-  // Initialize a Nova Int from an int.
-  NovaExpr(int i, nova_t type = NovaApeVar) : rows(0), cols(0) {
-    expr_type = type;
-    is_approx = false;
-    if (type == NovaRegister)
-      expr = i;  // Special case for hard-wired registers
-    else {
-      define_expr();
-      Set(expr, IntConst(i));
+      default:
+        // Scalars are initialized to the given value.
+        Set(expr, AConst(d));
+        break;
     }
   }
 
-  // Initialize an aggregate of Nova Approxes.  The double pointer is a dummy
-  // value that is used only for carrying type information.
-  NovaExpr(double* d, nova_t type = NovaApeMemVector, size_t rows=1, size_t cols=1) {
-    expr_type = type;
-    is_approx = true;
-    this->rows = rows;
-    this->cols = cols;
-    define_expr();
-  }
-
-  // Initialize an aggregate of Nova Ints.  The int pointer is a dummy
-  // value that is used only for carrying type information.
-  NovaExpr(int* i, nova_t type = NovaApeMemVector, size_t rows=1, size_t cols=1) {
+  // Initialize a Nova Int from an int.  The int is currently ignored for
+  // vector and array types.
+  NovaExpr(int i, nova_t type = NovaApeVar, size_t rows=1, size_t cols=1) {
     expr_type = type;
     is_approx = false;
     this->rows = rows;
     this->cols = cols;
-    define_expr();
+    switch (expr_type) {
+      case NovaRegister:
+        // Hard-wired registers use the register number as the expression
+        // itself.
+        expr = i;
+        break;
+
+      case NovaApeMemVector:
+      case NovaCUMemVector:
+      case NovaApeMemArray:
+      case NovaCUMemArray:
+        // No data initialization for vectors or arrays.
+        define_expr();
+        break;
+
+      default:
+        // Scalars are initialized to the given value.
+        define_expr();
+        Set(expr, IntConst(i));
+        break;
+    }
   }
 
   // ----- Address operators -----

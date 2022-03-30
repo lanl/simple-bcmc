@@ -22,14 +22,13 @@ void emit_nova_code(S1State& s1)
   assign_ape_coords(s1, ape_row, ape_col);
 
   // Initialize the random-number generator.
-  int dummy_int;  // Hack needed to declare a vector
   NovaExpr ci(0, NovaExpr::NovaCUVar);      // CU loop variable
-  counter_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  counter_3fry = NovaExpr(0, NovaExpr::NovaApeMemVector, 8);
   NovaCUForLoop(ci, 0, 7, 1,
                 [&]() {
                   counter_3fry[ci] = 0;
                 });
-  key_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  key_3fry = NovaExpr(0, NovaExpr::NovaApeMemVector, 8);
   key_3fry[0] = ape_row;
   key_3fry[1] = ape_col;
   NovaCUForLoop(ci, 2, 7, 1,
