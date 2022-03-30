@@ -109,6 +109,9 @@ public:
   // Maintain a Nova expression.
   scExpr expr = 0;    // Declare(expr); without the "static"
 
+  // Return true if the NovaExpr has been assigned a value.
+  bool has_value() { return expr_type != NovaInvalidType; }
+
   // ----- Constructors -----
 
   // "Declare" a variable without "defining" it.

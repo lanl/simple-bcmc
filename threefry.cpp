@@ -133,9 +133,6 @@ void mix(int a, int b, int ridx)
 void threefry4x32()
 {
   // Initialize both the internal and output state.
-  int dummy_int;  // Hack needed to declare a vector.
-  random_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
-  scratch_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 10);
   scratch_3fry[8] = 0x1BD1;
   scratch_3fry[9] = 0x1BDA;
   NovaExpr cidx(-1, NovaExpr::NovaCUVar);   // Index into 32-bit data (CU)
@@ -178,14 +175,30 @@ void threefry4x32()
 // again if we've run out of random numbers.
 NovaExpr get_random_int()
 {
-  static size_t r_idx = 8;  // Index into random_3fry
+  static NovaExpr r_idx(8, NovaExpr::NovaCUVar);  // Index into random_3fry
+  static NovaExpr ctr_hi(0, NovaExpr::NovaCUVar); // High 16 bits of tally of threefry4x32() invocations
+  static NovaExpr ctr_lo(0, NovaExpr::NovaCUVar); // Low 16 bits of tally of threefry4x32() invocations
 
-  // Generate 8 more random numbers if we've exhausted the current 8.
-  if (r_idx >= 8) {
-    threefry4x32();
-    r_idx = 0;
+  // On first invocation, initialize the output vector and the scratch vector.
+  if (!random_3fry.has_value()) {
+    int dummy_int;  // Hack needed to declare a vector
+    scratch_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 10);
+    random_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
   }
 
+  // Generate 8 more random numbers if we've exhausted the current 8.
+  ++r_idx;
+  CUIf(Gt(r_idx.expr, IntConst(7)));
+    threefry4x32();
+    ++ctr_lo;
+    counter_3fry[1] = ctr_lo;
+    CUIf(Eq(ctr_lo.expr, IntConst(0)));
+      ++ctr_hi;
+      counter_3fry[0] = ctr_hi;
+    CUFi();
+    r_idx = 0;
+  CUFi();
+
   // Return the current random number.
-  return random_3fry[r_idx++];
+  return random_3fry[r_idx];
 }

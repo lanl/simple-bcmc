@@ -17,8 +17,25 @@ void get_angle(std::size_t r_idx, NovaExpr& x_angle, NovaExpr& y_angle)
 // Emit the entire S1 program to a low-level kernel.
 void emit_nova_code(S1State& s1)
 {
+  // Tell each APE its row and column.
   NovaExpr ape_row, ape_col;
   assign_ape_coords(s1, ape_row, ape_col);
+
+  // Initialize the random-number generator.
+  int dummy_int;  // Hack needed to declare a vector
+  NovaExpr ci(0, NovaExpr::NovaCUVar);      // CU loop variable
+  counter_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  NovaCUForLoop(ci, 0, 7, 1,
+                [&]() {
+                  counter_3fry[ci] = 0;
+                });
+  key_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
+  key_3fry[0] = ape_row;
+  key_3fry[1] = ape_col;
+  NovaCUForLoop(ci, 2, 7, 1,
+                [&]() {
+                  key_3fry[ci] = 0;
+                });
 
 #ifdef XYZZY
   // Temporary
@@ -56,24 +73,16 @@ void emit_nova_code(S1State& s1)
   }
 #endif
 
-#ifdef XYZZY
+#ifndef XYZZY
   // Temporary
   TraceMessage("Threefry\n");
-  int dummy_int;  // Hack needed to declare a vector.
-  key_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
-  key_3fry[0] = ape_row;
-  key_3fry[1] = ape_col;
-  for (int i = 2; i < 8; ++i)
-    key_3fry[i] = 0;
-  counter_3fry = NovaExpr(&dummy_int, NovaExpr::NovaApeMemVector, 8);
-  for (int i = 0; i < 8; ++i)
-    counter_3fry[i] = 0;
-  threefry4x32();
-  TraceOneRegisterOneApe(random_3fry[0].expr, 0, 0);
-  TraceOneRegisterOneApe(random_3fry[1].expr, 0, 0);
+  for (int i = 0; i < 16; ++i) {
+    NovaExpr r(get_random_int());
+    TraceOneRegisterOneApe(r.expr, 0, 0);
+  }
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Square roots\n");
   NovaExpr x(4.0);
