@@ -103,7 +103,7 @@ void emit_nova_code(S1State& s1)
   TraceOneRegisterOneApe(some_approx.expr, 0, 0);
 #endif
 
-#ifdef XYZZY
+#ifndef XYZZY
   // Temporary
   TraceMessage("Cosines\n");
   for (double a = 0.0; a <= 6.28318530718; a += 0.1) {
@@ -114,7 +114,7 @@ void emit_nova_code(S1State& s1)
   }
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Threefry\n");
   int dummy_int;  // Hack needed to declare a vector.

@@ -36,12 +36,12 @@ NovaExpr cos_0_2pi(const NovaExpr& x)
   NovaExpr t3(num2*t2 - t1);
   NovaExpr t4(num2*t3 - t2);
 
-  // Compute a linear combination of the Chebyshev polynomials.
+  // Compute a linear combination of the Chebyshev polynomials.  We ignore
+  // the t1 and t3 terms here because their coefficients were too small in
+  // magnitude (<1e-6).
   NovaExpr sum(t0*0.30420407768492924161);
-  sum += t1*4.1799657954033616556e-06;
-  sum += t2*0.97226055289980561902;
-  sum += t3*-4.8492073285277824095e-06;
   sum += t4*-0.33194352475813920789;
+  sum += t2*0.97226055289980561902;
   return sum;
 }
 
@@ -60,12 +60,11 @@ NovaExpr sin_0_2pi(const NovaExpr& x)
   NovaExpr t4(num2*t3 - t2);
   NovaExpr t5(num2*t4 - t3);
 
-  // Compute a linear combination of the Chebyshev polynomials.
-  NovaExpr sum(t0*2.2351089173898905858e-06);
-  sum += t1*-0.56923064009501811444;
-  sum += t2*7.1320956207080827701e-06;
+  // Compute a linear combination of the Chebyshev polynomials.  We ignore
+  // the t0, t2, and t4 terms here because their coefficients were too
+  // small in magnitude (<1e-6).
+  NovaExpr sum(t1*-0.56923064009501811444);
   sum += t3*0.66716913685894241315;
-  sum += t4*-2.2146411336974405406e-06;
   sum += t5*-0.11112410957439385062;
   return sum;
 }
