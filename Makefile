@@ -6,7 +6,7 @@ LIBS = -lS1
 
 SOURCES = \
 	main.cpp \
-	emit.cpp \
+	imc.cpp \
 	threefry.cpp \
 	utils.cpp
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))

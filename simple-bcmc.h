@@ -28,6 +28,7 @@ extern NovaExpr counter_3fry;  // Input: Loop counter
 extern NovaExpr key_3fry;      // Input: Key (e.g., APE ID)
 extern NovaExpr random_3fry;   // Output: Random numbers
 
+extern void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col);
 extern NovaExpr int_to_approx01(const NovaExpr& i_val);
 extern NovaExpr cos_0_2pi(const NovaExpr& x);
 extern NovaExpr sin_0_2pi(const NovaExpr& x);
