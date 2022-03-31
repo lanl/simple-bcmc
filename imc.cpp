@@ -116,6 +116,25 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   TraceOneRegisterOneApe(my_array[1][1].expr, 0, 0);
 #endif
 
+#ifndef XYZZY
+  // Temporary
+  TraceMessage("Conditionals\n");
+  {
+    NovaExpr a(2);
+    NovaExpr b(3);
+    NovaExpr c(4);
+    NovaExpr d(5);
+    NovaExpr thing;
+    NovaApeIf(a < b && c > d, [&]() {
+      thing = 123;
+    }, [&]() {
+      thing = 456;
+    });
+    TraceOneRegisterOneApe(thing.expr, 0, 0);
+  }
+#endif
+
+
   // Define the number of particles.  Because the value is larger than
   // 65535, we split it into A and B such that A*B equals the desired total.
   const int n_particles = 1000;  // Temporary -- should be 1000000;
@@ -149,15 +168,21 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
     [&]() {
       NovaCUForLoop(ci2, 0, n_particles_b - 1, 1,
         [&]() {
-	  // Initialize the per-particle work.
+          // Initialize the per-particle work.
           NovaExpr angle[2];
           get_angle(angle);
           NovaExpr weight(start_weight);
           NovaExpr d_remain(dt*c);  // TODO: Multiply by a random number after census.
           NovaExpr x_cell(start_x);
           NovaExpr y_cell(start_y);
+          NovaExpr alive(1);   // Is the current APE alive?
           NovaExpr all_alive(1, NovaExpr::NovaCUVar);  // Are all APEs alive?
-	  NovaExpr alive(0);   // Is the current APE alive?
+
+          // Iterate until no more particles are alive.
+          NovaExpr w_iter(0, NovaExpr::NovaCUVar);
+          NovaCUForLoop(w_iter, 0, 1, 1,  // TODO: Loop from 0 to 1 by 0.
+            [&]() {
+            });
         });
     });
 }

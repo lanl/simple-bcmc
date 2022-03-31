@@ -187,16 +187,16 @@ NovaExpr get_random_int()
 
   // Generate 8 more random numbers if we've exhausted the current 8.
   ++r_idx;
-  CUIf(Gt(r_idx.expr, IntConst(7)));
+  NovaCUIf(r_idx > 7, [&]() {
     threefry4x32();
     ++ctr_lo;
     counter_3fry[1] = ctr_lo;
-    CUIf(Eq(ctr_lo.expr, IntConst(0)));
+    NovaCUIf(ctr_lo == 0, [&]() {
       ++ctr_hi;
       counter_3fry[0] = ctr_hi;
-    CUFi();
+    });
     r_idx = 0;
-  CUFi();
+  });
 
   // Return the current random number.
   return random_3fry[r_idx];

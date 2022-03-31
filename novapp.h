@@ -220,7 +220,7 @@ public:
       case NovaCUMemVector:
       case NovaApeMemArray:
       case NovaCUMemArray:
-        // Store only a point for vector/array expressions.  (Set doesn't
+        // Store only a pointer for vector/array expressions.  (Set doesn't
         // work here.)
         expr = rhs.expr;
         break;
@@ -318,7 +318,7 @@ public:
     return *this;                                               \
   }
 
-  // An GENERAL_OP defines both an arithmetic and an assignment operator
+  // A GENERAL_OP defines both an arithmetic and an assignment operator
   // that accept a NovaExpr, an integer, or a double on the right-hand
   // side.
 #define GENERAL_OP(OP, OP_EQ, NOVA)                             \
@@ -342,6 +342,33 @@ public:
   NovaExpr& operator OP_EQ(const double rhs) {                  \
     Set(expr, NOVA(expr, AConst(rhs)));                         \
     return *this;                                               \
+  }
+
+  // A GENERAL_REL defines a relational operator that accepts a NovaExpr,
+  // an integer, or a double on the right-hand side.
+#define GENERAL_REL(OP, NOVA)                                   \
+  friend NovaExpr operator OP(NovaExpr& lhs, NovaExpr& rhs) {   \
+    NovaExpr result;                                            \
+    result.expr_type = lhs.expr_type;                           \
+    result.is_approx = false;                                   \
+    result.expr = NOVA(lhs.expr, rhs.expr);                     \
+    return result;                                              \
+  }                                                             \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr& lhs, int rhs) {         \
+    NovaExpr result;                                            \
+    result.expr_type = lhs.expr_type;                           \
+    result.is_approx = false;                                   \
+    result.expr = NOVA(lhs.expr, IntConst(rhs));                \
+    return result;                                              \
+  }                                                             \
+                                                                \
+  friend NovaExpr operator OP(NovaExpr& lhs, double rhs) {      \
+    NovaExpr result;                                            \
+    result.expr_type = lhs.expr_type;                           \
+    result.is_approx = false;                                   \
+    result.expr = NOVA(lhs.expr, AConst(rhs));                  \
+    return result;                                              \
   }
 
   // ----- Basic arithmetic -----
@@ -397,12 +424,12 @@ public:
         break;
       case NovaApeMemArray:
         val.expr_type = NovaApeMemArrayPartial;
-	val.expr = expr;
+        val.expr = expr;
         val.row_idx = IntConst(idx);
         break;
       case NovaCUMemArray:
         val.expr_type = NovaCUVar;
-	val.expr = expr;
+        val.expr = expr;
         val.row_idx = IntConst(idx);
         break;
       case NovaApeMemArrayPartial:
@@ -454,13 +481,81 @@ public:
   }
 
   // ----- Square root -----
+
   friend NovaExpr sqrt(const NovaExpr& x) {
     NovaExpr s(x);
     Set(s.expr, Sqrt(x.expr));
     return s;
   }
+
+  // ----- Conditionals -----
+
+  GENERAL_REL(==, Eq)
+  GENERAL_REL(!=, Ne)
+  GENERAL_REL(<, Lt)
+  GENERAL_REL(<=, Le)
+  GENERAL_REL(>, Gt)
+  GENERAL_REL(>=, Ge)
+
+  // ----- Logical operators -----
+
+  friend NovaExpr operator||(NovaExpr lhs, NovaExpr rhs) {
+    NovaExpr result;
+    result.expr_type = lhs.expr_type;
+    result.is_approx = false;
+    result.expr = Or(lhs.expr, rhs.expr);
+    return result;
+  }
+
+  friend NovaExpr operator&&(NovaExpr lhs, NovaExpr rhs) {
+    NovaExpr result;
+    result.expr_type = lhs.expr_type;
+    result.is_approx = false;
+    result.expr = And(lhs.expr, rhs.expr);
+    return result;
+  }
+
+  friend NovaExpr operator!(NovaExpr rhs) {
+    NovaExpr result;
+    result.expr_type = rhs.expr_type;
+    result.is_approx = false;
+    result.expr = Not(rhs.expr);
+    return result;
+  }
 };
 
+
+// Perform an if statement on the APEs, taking the then and else clauses as
+// arguments.
+static void NovaApeIf(const NovaExpr& cond,
+                      const std::function <void ()>& f_then,
+                      const std::function <void ()>& f_else=nullptr)
+{
+  ApeIf(cond.expr);
+  f_then();
+  if (f_else != nullptr) {
+    ApeElse();
+    f_else();
+  }
+  ApeFi();
+}
+
+// Perform an if statement on the CU, taking the then and else clauses as
+// arguments.
+static void NovaCUIf(const NovaExpr& cond,
+                     const std::function <void ()>& f_then,
+                     const std::function <void ()>& f_else=nullptr)
+{
+  CUIf(cond.expr);
+  f_then();
+  CUFi();
+  if (f_else != nullptr) {
+    // There is no CUElse() macro in Nova.
+    CUIf(Not(cond.expr));
+    f_else();
+    CUFi();
+  }
+}
 
 // Perform a for loop on the CU, taking the loop body as an argument.
 static void NovaCUForLoop(NovaExpr& var, int from, int to, int step,

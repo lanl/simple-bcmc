@@ -79,10 +79,10 @@ NovaExpr int_to_approx01(const NovaExpr& i_val)
   NovaExpr a_val(0.0);
   NovaExpr one(1);
   for (int i = 0; i < 16; ++i) {
-    ApeIf(Eq(((i_val>>i)&1).expr, IntConst(1)));
-    double f = 1.0/double(1<<(16 - i));  // ..., 1/8, 1/4, 1/2
-    a_val += f;
-    ApeFi();
+    NovaApeIf((i_val>>i)&1 == 1, [&](){
+      double f = 1.0/double(1<<(16 - i));  // ..., 1/8, 1/4, 1/2
+      a_val += f;
+    });
   }
   return a_val;
 }
@@ -132,4 +132,29 @@ NovaExpr sin_0_2pi(const NovaExpr& x)
   sum += t3*0.66716913685894241315;
   sum += t5*-0.11112410957439385062;
   return sum;
+}
+
+// Compute ln(r) for r in [0, 65535].
+NovaExpr ln_of_int(const NovaExpr& r, int n=5)
+{
+  // Prepare the numerator and denominator.
+  NovaExpr a[2];  // 32-bit big-endian version of the numerator (r)
+  NovaExpr b[2];  // 32-bit big-endian version of the denominator (1)
+  a[0] = 0;
+  a[1] = r;
+  b[0] = 0;
+  b[1] = 1;
+  NovaExpr result(0.0);
+
+  // Perform the given number of iterations.
+  NovaExpr j(0, NovaExpr::NovaCUVar);
+  NovaCUForLoop(j, 0, n - 1, 1,
+    [&]() {
+      // Unroll "while (a > b)" to a depth of 4, which suffices for n < 8.
+      NovaExpr k(0, NovaExpr::NovaCUVar);
+      NovaCUForLoop(k, 0, 3, 1,
+        [&]() {
+        });
+    });
+  return result;
 }
