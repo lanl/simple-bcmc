@@ -3,6 +3,7 @@
  */
 
 #include "simple-bcmc.h"
+#include <cassert>
 
 // Sample a simple 2-D angle.  (The third dimension is not used for now.)
 void get_angle(NovaExpr angle[2])
@@ -101,7 +102,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   TraceOneRegisterOneApe(angle[1].expr, 0, 0);
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Arrays\n");
   NovaExpr my_array(0, NovaExpr::NovaApeMemArray, 2, 2);
@@ -114,4 +115,49 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   TraceOneRegisterOneApe(my_array[1][0].expr, 0, 0);
   TraceOneRegisterOneApe(my_array[1][1].expr, 0, 0);
 #endif
+
+  // Define the number of particles.  Because the value is larger than
+  // 65535, we split it into A and B such that A*B equals the desired total.
+  const int n_particles = 1000;  // Temporary -- should be 1000000;
+  const int n_particles_a = 1000;
+  const int n_particles_b = n_particles/n_particles_a;
+  assert(n_particles_a*n_particles_b == n_particles);
+  const double start_weight = 1.0/n_particles; // Starting energy weight of each particle
+
+  // Define various other constants and parameters.
+  const double c = 299.792; // speed of light, in cm/shake
+  const double dx = 0.01;  // cell size, square, in cm
+  const double dt = 0.001; // timestep size, in shakes (1e-8 seconds)
+  const double mfp = 0.3; // average distance, in cm, between scattering events
+  const double sig_s = 1.0/mfp; // scattering opacity
+  const double sig_a = 10.0; // absorption opacity
+  const double ratio = dx; // converts real space to [0,1] space
+  const int start_x = 10; // 11th x cell
+  const int start_y = 10; // 11th y cell
+  const int max_x_cell = 21;
+  const int max_y_cell = 21;
+
+  // Allocate space for tallies.
+  NovaExpr local_tally(0.0, NovaExpr::NovaApeMemArray, max_x_cell, max_y_cell);  // x is the slow dimension
+  NovaExpr global_tally(0.0, NovaExpr::NovaCUMemArray, max_x_cell, max_y_cell);
+
+  // Loop over the number of particles, split into two nested loops to work
+  // around the 16-bit integer limitation.
+  NovaExpr ci1(0, NovaExpr::NovaCUVar);
+  NovaExpr ci2(0, NovaExpr::NovaCUVar);
+  NovaCUForLoop(ci1, 0, n_particles_a - 1, 1,
+    [&]() {
+      NovaCUForLoop(ci2, 0, n_particles_b - 1, 1,
+        [&]() {
+	  // Initialize the per-particle work.
+          NovaExpr angle[2];
+          get_angle(angle);
+          NovaExpr weight(start_weight);
+          NovaExpr d_remain(dt*c);  // TODO: Multiply by a random number after census.
+          NovaExpr x_cell(start_x);
+          NovaExpr y_cell(start_y);
+          NovaExpr all_alive(1, NovaExpr::NovaCUVar);  // Are all APEs alive?
+	  NovaExpr alive(0);   // Is the current APE alive?
+        });
+    });
 }
