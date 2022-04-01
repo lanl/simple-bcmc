@@ -218,22 +218,6 @@ public:
     }
   }
 
-  // ----- Address operators -----
-
-  // Return the address of a variable stored in either APE or CU memory.
-  int operator&() {
-    switch (expr_type) {
-      case NovaApeMem:
-      case NovaCUMem:
-        return MemAddress(expr);
-        break;
-      default:
-        throw std::domain_error("attempt to take the address of a non-memory variable");
-        break;
-    }
-    return 0;  // Should never get here.
-  }
-
   // ----- Assignment operators -----
 
   // Assign one NovaExpr to another using Nova's Set macro.

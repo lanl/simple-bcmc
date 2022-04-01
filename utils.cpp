@@ -57,7 +57,7 @@ void or_reduce_apes_to_cu(S1State& s1, NovaExpr& cu_var, NovaExpr& ape_var)
       // Compute an OR across all APEs on the current chip.
       // eCUC(cuSet, active_ape_col.expr, _, -1);
       active_ape_col = -1;
-      eCUC(cuSetRWAddress, _, _, &chip_or);
+      eCUC(cuSetRWAddress, _, _, MemAddress(chip_or.expr));
       int apeRChanged = apeR1;  // Register indicating ape_var is nonzero for some APE on the current chip.
       eControl(controlOpReserveApeReg, apeRChanged);
       eApeX(apeSet, apeRChanged, _, ape_var.expr);

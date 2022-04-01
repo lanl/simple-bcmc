@@ -41,9 +41,9 @@ NovaExpr get_distance_to_boundary(NovaExpr* cross_face,
     }, [&]() {
          angle_sign = 1;
     });
-    distances[i] = (vertices[i*2 + angle_sign] - pos[i])/angle[i];
+    distances[i] = (vertices[angle_sign + i + i] - pos[i])/angle[i];
     NovaApeIf(distances[i] < min_distance, [&]() {
-      *cross_face = i*2 + angle_sign;
+      *cross_face = angle_sign + i + i;
       min_distance = distances[i];
     });
   });
@@ -247,12 +247,10 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
               NovaExpr d_scatter(-ln_of_int(get_random_int())/sig_s/ratio);
               NovaExpr d_absorb(-ln_of_int(get_random_int())/sig_a/ratio);
               NovaExpr cross_face(-1);
-	      /*
-	      NovaExpr d_boundary =
-		get_distance_to_boundary(&cross_face,
-					 pos, angle,
-					 x_cell, y_cell);
-	      */
+              NovaExpr d_boundary =
+                get_distance_to_boundary(&cross_face,
+                                         pos, angle,
+                                         x_cell, y_cell);
             });
         });
     });
