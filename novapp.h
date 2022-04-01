@@ -481,10 +481,12 @@ public:
         break;
       case NovaApeMemArray:
         val.expr_type = NovaApeMemArrayPartial;
+        val.expr = expr;
         val.row_idx = idx.expr;
         break;
       case NovaCUMemArray:
         val.expr_type = NovaCUMemArrayPartial;
+        val.expr = expr;
         val.row_idx = idx.expr;
         break;
       case NovaApeMemArrayPartial:
