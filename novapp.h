@@ -108,6 +108,31 @@ private:
       }
   }
 
+  // Convert all APE types to NovaApeVar and all CU types to NovaCUVar.
+  static nova_t convert_to_var(nova_t type) {
+    nova_t result = NovaInvalidType;
+    switch (type) {
+      case NovaApeVar:
+      case NovaApeMem:
+      case NovaApeMemVector:
+      case NovaApeMemArray:
+        result = NovaApeVar;
+        break;
+
+      case NovaCUVar:
+      case NovaCUMem:
+      case NovaCUMemVector:
+      case NovaCUMemArray:
+      case NovaCUMemArrayPartial:
+        result = NovaCUVar;
+        break;
+
+      default:
+        throw std::invalid_argument("invalid nova_t passed to NovaExpr");
+    }
+    return result;
+  }
+
 public:
   // Maintain a Nova expression.
   scExpr expr = 0;    // Declare(expr); without the "static"
@@ -349,7 +374,7 @@ public:
 #define GENERAL_REL(OP, NOVA)                                   \
   friend NovaExpr operator OP(NovaExpr& lhs, NovaExpr& rhs) {   \
     NovaExpr result;                                            \
-    result.expr_type = lhs.expr_type;                           \
+    result.expr_type = convert_to_var(lhs.expr_type);           \
     result.is_approx = false;                                   \
     result.expr = NOVA(lhs.expr, rhs.expr);                     \
     return result;                                              \
@@ -357,7 +382,7 @@ public:
                                                                 \
   friend NovaExpr operator OP(NovaExpr& lhs, int rhs) {         \
     NovaExpr result;                                            \
-    result.expr_type = lhs.expr_type;                           \
+    result.expr_type = convert_to_var(lhs.expr_type);           \
     result.is_approx = false;                                   \
     result.expr = NOVA(lhs.expr, IntConst(rhs));                \
     return result;                                              \
@@ -365,7 +390,7 @@ public:
                                                                 \
   friend NovaExpr operator OP(NovaExpr& lhs, double rhs) {      \
     NovaExpr result;                                            \
-    result.expr_type = lhs.expr_type;                           \
+    result.expr_type = convert_to_var(lhs.expr_type);           \
     result.is_approx = false;                                   \
     result.expr = NOVA(lhs.expr, AConst(rhs));                  \
     return result;                                              \
@@ -501,7 +526,7 @@ public:
 
   friend NovaExpr operator||(NovaExpr lhs, NovaExpr rhs) {
     NovaExpr result;
-    result.expr_type = lhs.expr_type;
+    result.expr_type = convert_to_var(lhs.expr_type);
     result.is_approx = false;
     result.expr = Or(lhs.expr, rhs.expr);
     return result;
@@ -509,7 +534,7 @@ public:
 
   friend NovaExpr operator&&(NovaExpr lhs, NovaExpr rhs) {
     NovaExpr result;
-    result.expr_type = lhs.expr_type;
+    result.expr_type = convert_to_var(lhs.expr_type);
     result.is_approx = false;
     result.expr = And(lhs.expr, rhs.expr);
     return result;
@@ -517,7 +542,7 @@ public:
 
   friend NovaExpr operator!(NovaExpr rhs) {
     NovaExpr result;
-    result.expr_type = rhs.expr_type;
+    result.expr_type = convert_to_var(rhs.expr_type);
     result.is_approx = false;
     result.expr = Not(rhs.expr);
     return result;
