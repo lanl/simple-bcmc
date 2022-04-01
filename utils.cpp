@@ -6,6 +6,16 @@
 #include "simple-bcmc.h"
 #include <cmath>
 
+// Return the minimum of two APE expressions.
+NovaExpr ape_min(const NovaExpr& a, const NovaExpr& b)
+{
+  NovaExpr result;
+  NovaApeIf(a < b,
+            [&]() { result = a; },
+            [&]() { result = b; });
+  return result;
+}
+
 // Perform a global Get operation.
 void global_get(NovaExpr& dest, NovaExpr src, int dir)
 {
