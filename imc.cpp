@@ -6,25 +6,27 @@
 #include <cassert>
 
 // Sample a simple 2-D angle.  (The third dimension is not used for now.)
-void get_angle(NovaExpr& angle)
+NovaExpr get_angle()
 {
   NovaExpr phi(int_to_approx01(get_random_int())*TWO_PI);
   NovaExpr mu(int_to_approx01(get_random_int())*2.0 - 1.0);
   NovaExpr eta(sqrt(NovaExpr(1.0) - mu*mu));
+  NovaExpr angle(0.0, NovaExpr::NovaApeMemVector, 2);
   angle[0] = eta*cos_0_2pi(phi);
   angle[1] = eta*sin_0_2pi(phi);
+  return angle;
 }
 
 
 // Return the distance to a boundary.
-NovaExpr get_distance_to_boundary(NovaExpr& cross_face,
+NovaExpr get_distance_to_boundary(NovaExpr* cross_face,
                                   const NovaExpr& pos,
                                   const NovaExpr& angle,
                                   const NovaExpr& x_cell,
                                   const NovaExpr& y_cell) {
   // Initialize the distance to each edge.
   NovaExpr min_distance(1e-6);
-  cross_face = -1;
+  *cross_face = -1;
   NovaExpr vertices(0.0, NovaExpr::NovaApeMemVector, 4);
   vertices[0] = 0.0;
   vertices[1] = 1.0;
@@ -41,7 +43,7 @@ NovaExpr get_distance_to_boundary(NovaExpr& cross_face,
     });
     distances[i] = (vertices[i*2 + angle_sign] - pos[i])/angle[i];
     NovaApeIf(distances[i] < min_distance, [&]() {
-      cross_face = i*2 + angle_sign;
+      *cross_face = i*2 + angle_sign;
       min_distance = distances[i];
     });
   });
@@ -49,16 +51,16 @@ NovaExpr get_distance_to_boundary(NovaExpr& cross_face,
   // In 2D make the cross face 4-7 to signify a double crossing.
   NovaApeIf(distances[0] == distances[1], [&]() {
     NovaApeIf(angle[0] > 1.0e-19 && angle[1] > 1.0e-19, [&]() {
-      cross_face = 4;
+      *cross_face = 4;
     });
     NovaApeIf(angle[0] > 1.0e-19 && angle[1] < 1.0e-19, [&]() {
-      cross_face = 5;
+      *cross_face = 5;
     });
     NovaApeIf(angle[0] < 1.0e-19 && angle[1] > 1.0e-19, [&]() {
-      cross_face = 6;
+      *cross_face = 6;
     });
     NovaApeIf(angle[0] < 1.0e-19 && angle[1] < 1.0e-19, [&]() {
-      cross_face = 6;
+      *cross_face = 6;
     });
   });
   return min_distance;
@@ -226,14 +228,16 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
       NovaCUForLoop(ci2, 0, n_particles_b - 1, 1,
         [&]() {
           // Initialize the per-particle work.
-          NovaExpr angle(0.0, NovaExpr::NovaApeMemVector, 2);
-          get_angle(angle);
           NovaExpr weight(start_weight);
           NovaExpr d_remain(dt*c);  // TODO: Multiply by a random number after census.
           NovaExpr x_cell(start_x);
           NovaExpr y_cell(start_y);
           NovaExpr alive(1);   // Is the current APE alive?
           NovaExpr all_alive(1, NovaExpr::NovaCUVar);  // Are all APEs alive?
+          NovaExpr pos(0.0, NovaExpr::NovaApeMemVector, 2);  // Particle position
+          pos[0] = 0.5;
+          pos[1] = 0.5;
+          NovaExpr angle = get_angle();  // Particle angle
 
           // Iterate until no more particles are alive.
           NovaExpr w_iter(0, NovaExpr::NovaCUVar);
@@ -242,6 +246,13 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
               // Compute the distance the particle will move.
               NovaExpr d_scatter(-ln_of_int(get_random_int())/sig_s/ratio);
               NovaExpr d_absorb(-ln_of_int(get_random_int())/sig_a/ratio);
+              NovaExpr cross_face(-1);
+	      /*
+	      NovaExpr d_boundary =
+		get_distance_to_boundary(&cross_face,
+					 pos, angle,
+					 x_cell, y_cell);
+	      */
             });
         });
     });
