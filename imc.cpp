@@ -5,6 +5,16 @@
 #include "simple-bcmc.h"
 #include <cassert>
 
+// Return the minimum of two APE expressions.
+NovaExpr ape_min(const NovaExpr& a, const NovaExpr& b)
+{
+  NovaExpr result;
+  NovaApeIf(a < b,
+            [&]() { result = a; },
+            [&]() { result = b; });
+  return result;
+}
+
 // Sample a simple 2-D angle.  (The third dimension is not used for now.)
 NovaExpr get_angle()
 {
@@ -251,6 +261,11 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
                 get_distance_to_boundary(&cross_face,
                                          pos, angle,
                                          x_cell, y_cell);
+              NovaExpr d_census(d_remain/ratio);
+              NovaExpr d_move = ape_min(d_boundary,
+                                        ape_min(d_census,
+                                                ape_min(d_scatter,
+                                                        d_absorb)));
             });
         });
     });
