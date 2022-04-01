@@ -145,9 +145,10 @@ public:
   // "Declare" a variable without "defining" it.
   NovaExpr() : expr_type(NovaInvalidType), rows(0), cols(0) { }
 
-  // Initialize a NovaExpr from another NovaExpr.
-  NovaExpr(const NovaExpr& other) {
-    expr_type = other.expr_type;
+  // Initialize a NovaExpr from another NovaExpr, optionally converting it
+  // to a variable (if it were originally memory).
+  NovaExpr(const NovaExpr& other, bool as_var=false) {
+    expr_type = as_var ? convert_to_var(other.expr_type) : other.expr_type;
     is_approx = other.is_approx;
     rows = other.rows;
     cols = other.cols;
@@ -301,7 +302,7 @@ public:
 #define NOVA_OP(OP, OP_EQ, NOVA)                                \
   friend NovaExpr operator OP(NovaExpr lhs,                     \
                               const NovaExpr& rhs) {            \
-    NovaExpr result(lhs);                                       \
+  NovaExpr result(lhs, true);                                   \
     Set(result.expr, NOVA(lhs.expr, rhs.expr));                 \
     return result;                                              \
   }                                                             \
@@ -317,7 +318,7 @@ public:
   NOVA_OP(OP, OP_EQ, NOVA)                                      \
                                                                 \
   friend NovaExpr operator OP(NovaExpr lhs, const int rhs) {    \
-    NovaExpr result(lhs);                                       \
+    NovaExpr result(lhs, true);                                 \
     Set(result.expr, NOVA(lhs.expr, IntConst(rhs)));            \
     return result;                                              \
   }                                                             \
@@ -333,7 +334,7 @@ public:
   NOVA_OP(OP, OP_EQ, NOVA)                                      \
                                                                 \
   friend NovaExpr operator OP(NovaExpr lhs, const double rhs) { \
-    NovaExpr result(lhs);                                       \
+    NovaExpr result(lhs, true);                                 \
     Set(result.expr, NOVA(lhs.expr, AConst(rhs)));              \
     return result;                                              \
   }                                                             \
@@ -350,8 +351,9 @@ public:
   NOVA_OP(OP, OP_EQ, NOVA)                                      \
                                                                 \
   friend NovaExpr operator OP(NovaExpr lhs, const int rhs) {    \
-    lhs.expr = NOVA(lhs.expr, IntConst(rhs));                   \
-    return lhs;                                                 \
+    NovaExpr result(lhs, true);                                 \
+    Set(result.expr, NOVA(lhs.expr, IntConst(rhs)));            \
+    return result;                                              \
   }                                                             \
                                                                 \
   NovaExpr& operator OP_EQ(const int rhs) {                     \
@@ -360,8 +362,9 @@ public:
   }                                                             \
                                                                 \
   friend NovaExpr operator OP(NovaExpr lhs, const double rhs) { \
-    lhs.expr = NOVA(lhs.expr, AConst(rhs));                     \
-    return lhs;                                                 \
+    NovaExpr result(lhs, true);                                 \
+    Set(result.expr, NOVA(lhs.expr, AConst(rhs)));              \
+    return result;                                              \
   }                                                             \
                                                                 \
   NovaExpr& operator OP_EQ(const double rhs) {                  \
