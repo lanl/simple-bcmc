@@ -6,7 +6,7 @@
 #include <cassert>
 
 // Sample a simple 2-D angle.  (The third dimension is not used for now.)
-void get_angle(NovaExpr angle[2])
+void get_angle(NovaExpr& angle)
 {
   NovaExpr phi(int_to_approx01(get_random_int())*TWO_PI);
   NovaExpr mu(int_to_approx01(get_random_int())*2.0 - 1.0);
@@ -145,7 +145,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
 #ifdef XYZZY
   // Temporary
   TraceMessage("get_angle()\n");
-  NovaExpr angle[2];
+  NovaExpr angle(0.0, NovaExpr::NovaApeMemVector, 2);
   get_angle(angle);
   TraceOneRegisterOneApe(angle[0].expr, 0, 0);
   TraceOneRegisterOneApe(angle[1].expr, 0, 0);
@@ -226,7 +226,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
       NovaCUForLoop(ci2, 0, n_particles_b - 1, 1,
         [&]() {
           // Initialize the per-particle work.
-          NovaExpr angle[2];
+          NovaExpr angle(0.0, NovaExpr::NovaApeMemVector, 2);
           get_angle(angle);
           NovaExpr weight(start_weight);
           NovaExpr d_remain(dt*c);  // TODO: Multiply by a random number after census.
