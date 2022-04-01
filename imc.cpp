@@ -15,6 +15,55 @@ void get_angle(NovaExpr angle[2])
   angle[1] = eta*sin_0_2pi(phi);
 }
 
+
+// Return the distance to a boundary.
+NovaExpr get_distance_to_boundary(NovaExpr& cross_face,
+                                  const NovaExpr& pos,
+                                  const NovaExpr& angle,
+                                  const NovaExpr& x_cell,
+                                  const NovaExpr& y_cell) {
+  // Initialize the distance to each edge.
+  NovaExpr min_distance(1e-6);
+  cross_face = -1;
+  NovaExpr vertices(0.0, NovaExpr::NovaApeMemVector, 4);
+  vertices[0] = 0.0;
+  vertices[1] = 1.0;
+  vertices[2] = 0.0;
+  vertices[3] = 1.0;
+  NovaExpr distances(0.0, NovaExpr::NovaApeMemVector, 2);
+  NovaExpr i(0, NovaExpr::NovaCUVar);
+  NovaCUForLoop(i, 0, 1, 1, [&]() {
+    NovaExpr angle_sign;
+    NovaApeIf(angle[i] < -1.0e-10, [&]() {
+      angle_sign = 0;
+    }, [&]() {
+         angle_sign = 1;
+    });
+    distances[i] = (vertices[i*2 + angle_sign] - pos[i])/angle[i];
+    NovaApeIf(distances[i] < min_distance, [&]() {
+      cross_face = i*2 + angle_sign;
+      min_distance = distances[i];
+    });
+  });
+
+  // In 2D make the cross face 4-7 to signify a double crossing.
+  NovaApeIf(distances[0] == distances[1], [&]() {
+    NovaApeIf(angle[0] > 1.0e-19 && angle[1] > 1.0e-19, [&]() {
+      cross_face = 4;
+    });
+    NovaApeIf(angle[0] > 1.0e-19 && angle[1] < 1.0e-19, [&]() {
+      cross_face = 5;
+    });
+    NovaApeIf(angle[0] < 1.0e-19 && angle[1] > 1.0e-19, [&]() {
+      cross_face = 6;
+    });
+    NovaApeIf(angle[0] < 1.0e-19 && angle[1] < 1.0e-19, [&]() {
+      cross_face = 6;
+    });
+  });
+  return min_distance;
+}
+
 // Emit the entire S1 program to a low-level kernel.
 void emit_nova_code(S1State& s1, unsigned long long seed)
 {

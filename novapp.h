@@ -374,29 +374,30 @@ public:
 
   // A GENERAL_REL defines a relational operator that accepts a NovaExpr,
   // an integer, or a double on the right-hand side.
-#define GENERAL_REL(OP, NOVA)                                   \
-  friend NovaExpr operator OP(NovaExpr& lhs, NovaExpr& rhs) {   \
-    NovaExpr result;                                            \
-    result.expr_type = convert_to_var(lhs.expr_type);           \
-    result.is_approx = false;                                   \
-    result.expr = NOVA(lhs.expr, rhs.expr);                     \
-    return result;                                              \
-  }                                                             \
-                                                                \
-  friend NovaExpr operator OP(NovaExpr& lhs, int rhs) {         \
-    NovaExpr result;                                            \
-    result.expr_type = convert_to_var(lhs.expr_type);           \
-    result.is_approx = false;                                   \
-    result.expr = NOVA(lhs.expr, IntConst(rhs));                \
-    return result;                                              \
-  }                                                             \
-                                                                \
-  friend NovaExpr operator OP(NovaExpr& lhs, double rhs) {      \
-    NovaExpr result;                                            \
-    result.expr_type = convert_to_var(lhs.expr_type);           \
-    result.is_approx = false;                                   \
-    result.expr = NOVA(lhs.expr, AConst(rhs));                  \
-    return result;                                              \
+#define GENERAL_REL(OP, NOVA)                                           \
+  friend NovaExpr operator OP(const NovaExpr& lhs,                      \
+                              const NovaExpr& rhs) {                    \
+    NovaExpr result;                                                    \
+    result.expr_type = convert_to_var(lhs.expr_type);                   \
+    result.is_approx = false;                                           \
+    result.expr = NOVA(lhs.expr, rhs.expr);                             \
+    return result;                                                      \
+  }                                                                     \
+                                                                        \
+  friend NovaExpr operator OP(const NovaExpr& lhs, int rhs) {           \
+    NovaExpr result;                                                    \
+    result.expr_type = convert_to_var(lhs.expr_type);                   \
+    result.is_approx = false;                                           \
+    result.expr = NOVA(lhs.expr, IntConst(rhs));                        \
+    return result;                                                      \
+  }                                                                     \
+                                                                        \
+  friend NovaExpr operator OP(const NovaExpr& lhs, double rhs) {        \
+    NovaExpr result;                                                    \
+    result.expr_type = convert_to_var(lhs.expr_type);                   \
+    result.is_approx = false;                                           \
+    result.expr = NOVA(lhs.expr, AConst(rhs));                          \
+    return result;                                                      \
   }
 
   // ----- Basic arithmetic -----
@@ -446,7 +447,7 @@ public:
 
   // ----- Index operators -----
 
-  NovaExpr operator[](std::size_t idx) {
+  NovaExpr operator[](std::size_t idx) const {
     NovaExpr val;
     val.is_approx = is_approx;
     switch (expr_type) {
@@ -482,7 +483,7 @@ public:
     return val;
   }
 
-  NovaExpr operator[](const NovaExpr& idx) {
+  NovaExpr operator[](const NovaExpr& idx) const {
     NovaExpr val;
     val.is_approx = is_approx;
     switch (expr_type) {
