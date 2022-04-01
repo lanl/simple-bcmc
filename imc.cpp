@@ -225,10 +225,6 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   const int max_x_cell = 21;
   const int max_y_cell = 21;
 
-  // Allocate space for tallies.
-  NovaExpr local_tally(0.0, NovaExpr::NovaApeMemArray, max_x_cell, max_y_cell);  // x is the slow dimension
-  NovaExpr global_tally(0.0, NovaExpr::NovaCUMemArray, max_x_cell, max_y_cell);
-
   // Loop over the number of particles, split into two nested loops to work
   // around the 16-bit integer limitation.
   NovaExpr ci1(0, NovaExpr::NovaCUVar);
@@ -266,6 +262,80 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
                                         ape_min(d_census,
                                                 ape_min(d_scatter,
                                                         d_absorb)));
+
+              // Move the particle, subtracting the distance remaining.
+              pos[0] += angle[0]*d_move;
+              pos[1] += angle[1]*d_move;
+
+              // Reduce the distance to census, using the real distance.
+              d_remain -= d_move*ratio;
+
+              // Process the event.
+              NovaApeIf (d_move == d_census, [&]() {
+                alive = false;
+              }, [&]() {
+                NovaApeIf (d_move == d_absorb, [&]() {
+                  alive = false;
+                }, [&]() {
+                  NovaApeIf (d_move == d_scatter, [&]() {
+                    angle = get_angle();
+                  }, [&]() {
+                    NovaApeIf (d_move == d_boundary, [&]() {
+                      NovaApeIf (cross_face == 0, [&]() {
+                        --x_cell;
+                        pos[0] = 1.0;
+                      });
+                      NovaApeIf (cross_face == 1, [&]() {
+                        ++x_cell;
+                        pos[0] = 0.0;
+                      });
+                      NovaApeIf (cross_face == 2, [&]() {
+                        --y_cell;
+                        pos[1] = 1.0;
+                      });
+                      NovaApeIf (cross_face == 3, [&]() {
+                        ++y_cell;
+                        pos[1] = 1.0;
+                      });
+                      // Special event for double crossing: +x +y
+                      NovaApeIf (cross_face == 4, [&]() {
+                        ++x_cell;
+                        ++y_cell;
+                        pos[0] = 0.0;
+                        pos[1] = 0.0;
+                      });
+                      // Special event for double crossing: +x -y
+                      NovaApeIf (cross_face == 5, [&]() {
+                        ++x_cell;
+                        --y_cell;
+                        pos[0] = 0.0;
+                        pos[1] = 1.0;
+                      });
+                      // Special event for double crossing: -x, +y
+                      NovaApeIf (cross_face == 6, [&]() {
+                        --x_cell;
+                        ++y_cell;
+                        pos[0] = 1.0;
+                        pos[1] = 0.0;
+                      });
+                      // Special event for double crossing: -x, -y
+                      NovaApeIf (cross_face == 7, [&]() {
+                        --x_cell;
+                        --y_cell;
+                        pos[0] = 1.0;
+                        pos[1] = 1.0;
+                      });
+                      // Check if particle exited the domain.
+                      NovaApeIf (x_cell >= max_x_cell || x_cell < 0, [&]() {
+                        alive = false;
+                      });
+                      NovaApeIf (y_cell >= max_y_cell || y_cell < 0, [&]() {
+                        alive = false;
+                      });
+                    });  // Event == boundary
+                  });  // Event == scatter
+                });  // Event == absorb
+              });  // Event == census
             });
         });
     });
