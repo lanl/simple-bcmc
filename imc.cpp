@@ -247,7 +247,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
 
           // Iterate until no more particles are alive.
           NovaExpr w_iter(0, NovaExpr::NovaCUVar);
-          NovaCUForLoop(w_iter, 0, 1, 1,  // TODO: Loop from 0 to 1 by 0.
+          NovaCUForLoop(w_iter, 0, 1, 0,  // while (alive) {...}
             [&]() {
               // Compute the distance the particle will move.
               NovaExpr d_scatter(-ln_of_int(get_random_int())/sig_s/ratio);
@@ -336,6 +336,13 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
                   });  // Event == scatter
                 });  // Event == absorb
               });  // Event == census
+
+              // Determine if any APE is still alive.
+              or_reduce_apes_to_cu(s1, &all_alive, alive);
+              NovaApeIf (all_alive == 0, [&]() {
+                // No APE is alive; exit the while loop.
+                w_iter++;
+              });
             });
         });
     });

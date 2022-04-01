@@ -20,7 +20,7 @@ void global_get(NovaExpr& dest, NovaExpr src, int dir)
 }
 
 // Tell each APE its row and column number.
-void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col)
+void assign_ape_coords(const S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col)
 {
   // Tell each APE its row number.
   ape_row = 0;
@@ -45,10 +45,10 @@ void assign_ape_coords(S1State& s1, NovaExpr& ape_row, NovaExpr& ape_col)
 
 
 // OR-reduce a value from all APEs to the CU.
-void or_reduce_apes_to_cu(S1State& s1, NovaExpr& cu_var, NovaExpr& ape_var)
+void or_reduce_apes_to_cu(const S1State& s1, NovaExpr* cu_var, const NovaExpr& ape_var)
 {
   // Loop over all chips, ORing one value per chip into cu_var.
-  cu_var = 0;
+  *cu_var = 0;
   DeclareCUVar(SomethingChangedInGrid,Int);
   Set(SomethingChangedInGrid,IntConst(0));
   NovaExpr chip_or(0, NovaExpr::NovaCUMem);   // Per-chip OR result
@@ -67,7 +67,7 @@ void or_reduce_apes_to_cu(S1State& s1, NovaExpr& cu_var, NovaExpr& ape_var)
 
       // OR the per-chip value into cu_var.
       CUIf(Ne(chip_or.expr, IntConst(0)));
-      cu_var = 1;
+      *cu_var = 1;
       CUFi();
     });
   });
