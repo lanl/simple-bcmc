@@ -116,7 +116,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   TraceOneRegisterOneApe(my_array[1][1].expr, 0, 0);
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Conditionals\n");
   {
@@ -132,6 +132,14 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
     });
     TraceOneRegisterOneApe(thing.expr, 0, 0);
   }
+#endif
+
+#ifndef XYZZY
+  // Temporary
+  TraceMessage("Natural log of an integer/65535\n");
+  NovaExpr p64k(12345);
+  NovaExpr lg = ln_of_int(p64k);
+  TraceOneRegisterOneApe(lg.expr, 0, 0);
 #endif
 
 

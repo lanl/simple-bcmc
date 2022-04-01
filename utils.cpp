@@ -135,8 +135,11 @@ NovaExpr sin_0_2pi(const NovaExpr& x)
 }
 
 // Compute ln(r) for r in [0, 65535].
-NovaExpr ln_of_int(const NovaExpr& r, int n=5)
+NovaExpr ln_of_int(const NovaExpr& r)
 {
+  // Hard-wire the number of iterations to perform.
+  const int n = 5;
+
   // Prepare the numerator and denominator.
   NovaExpr a[2];  // 32-bit big-endian version of the numerator (r)
   NovaExpr b[2];  // 32-bit big-endian version of the denominator (1)
@@ -144,17 +147,44 @@ NovaExpr ln_of_int(const NovaExpr& r, int n=5)
   a[1] = r;
   b[0] = 0;
   b[1] = 1;
-  NovaExpr result(0.0);
+  NovaExpr lg(0.0);
 
-  // Perform the given number of iterations.
-  NovaExpr j(0, NovaExpr::NovaCUVar);
-  NovaCUForLoop(j, 0, n - 1, 1,
-    [&]() {
-      // Unroll "while (a > b)" to a depth of 4, which suffices for n < 8.
-      NovaExpr k(0, NovaExpr::NovaCUVar);
-      NovaCUForLoop(k, 0, 3, 1,
-        [&]() {
+  // Unroll the given number of iterations.  We do this on the host because
+  // we need j in a floating-point expression.
+  for (int j = 0; j < n; ++j) {
+    // Unroll "while (a > b)" to a depth of 16.
+    NovaExpr k(0, NovaExpr::NovaCUVar);
+    NovaCUForLoop(k, 0, 15, 1, [&]() {
+      NovaApeIf(a[0] > b[0] || (a[0] == b[0] && a[1] >= b[1]), [&]() {
+        lg += std::log(1.0 + std::pow(2.0, -double(j)));
+
+        // 32-bit a -= b
+        NovaApeIf(a[1] < b[1], [&]() {
+          --a[0];
         });
+        a[0] -= b[0];
+        a[1] -= b[1];
+
+        // 32-bit a <<= j
+        a[0] = (a[0]<<j) | (a[1]>>(16 - j));  // Logical shift right
+        a[1] <<= j;
+
+        // 32-bit b += b<<j
+        NovaExpr bj[2];   // b<<j
+        bj[0] = (b[0]<<j) | (b[1]>>(16 - j));  // Logical shift right
+        bj[1] = b[1]<<j;
+        b[0] += bj[0];
+        NovaExpr b1(b[1] + bj[1]);
+        NovaApeIf(b1 < b[1], [&]() {  // Carry
+          ++b[0];
+        });
+        b[1] = b1;
+      });
     });
-  return result;
+
+    // 32-bit a <<= 1
+    a[0] = (a[0]<<1) | ((a[1]>>15) & 1);
+    a[1] <<= 1;
+  }
+  return lg - std::log(65535.0);
 }

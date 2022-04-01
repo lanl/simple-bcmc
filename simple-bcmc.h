@@ -35,5 +35,6 @@ extern NovaExpr int_to_approx01(const NovaExpr& i_val);
 extern NovaExpr cos_0_2pi(const NovaExpr& x);
 extern NovaExpr sin_0_2pi(const NovaExpr& x);
 extern NovaExpr get_random_int();
+extern NovaExpr ln_of_int(const NovaExpr& r);
 
 #endif
