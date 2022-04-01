@@ -134,7 +134,7 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
   }
 #endif
 
-#ifndef XYZZY
+#ifdef XYZZY
   // Temporary
   TraceMessage("Natural log of an integer/65535\n");
   NovaExpr p64k(12345);
@@ -190,6 +190,9 @@ void emit_nova_code(S1State& s1, unsigned long long seed)
           NovaExpr w_iter(0, NovaExpr::NovaCUVar);
           NovaCUForLoop(w_iter, 0, 1, 1,  // TODO: Loop from 0 to 1 by 0.
             [&]() {
+              // Compute the distance the particle will move.
+              NovaExpr d_scatter(-ln_of_int(get_random_int())/sig_s/ratio);
+              NovaExpr d_absorb(-ln_of_int(get_random_int())/sig_a/ratio);
             });
         });
     });

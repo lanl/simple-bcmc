@@ -403,6 +403,14 @@ public:
   APPROX_OP(*, *=, Mul)
   APPROX_OP(/, /=, Div)
 
+  NovaExpr operator-() {
+    NovaExpr result;
+    result.expr_type = convert_to_var(expr_type);
+    result.is_approx = is_approx;
+    result.expr = Sub(is_approx ? AConst(0.0) : IntConst(0), expr);
+    return result;
+  }
+
   // ----- Bit manipulation -----
 
   INTEGER_OP(|, |=, Or)
