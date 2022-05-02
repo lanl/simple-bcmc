@@ -1,6 +1,6 @@
 SCROOT = $(HOME)/src/SingularComputingMaterialProvidedToLANL/System\ Code
 CPPFLAGS = -I$(SCROOT) -I.
-CXXFLAGS = -g -O0 -Wno-write-strings -std=c++17
+CXXFLAGS = -g -O2 -Wno-write-strings -std=c++17
 LDFLAGS = -L$(SCROOT)
 LIBS = -lS1
 
